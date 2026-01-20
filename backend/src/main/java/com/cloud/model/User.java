@@ -26,6 +26,12 @@ public class User {
     @Column
     private String role;
 
+    @Column(nullable = false)
+    private boolean locked = false;
+
+    @Column(nullable = false)
+    private int failedAttempts = 0;
+
     // Getters et setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -38,4 +44,17 @@ public class User {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public boolean isLocked() {
+        return locked;
+    }
+    public void setLocked(boolean locked) {
+        this.locked = locked;
+    }
+    public int getFailedAttempts() {
+        return failedAttempts;
+    }
+    public void setFailedAttempts(int failedAttempts) {
+        this.failedAttempts = failedAttempts;
+    }
 }
