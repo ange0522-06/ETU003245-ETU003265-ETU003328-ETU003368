@@ -1,3 +1,6 @@
+cd backend
+mvn spring-boot:run
+
 'Personne 1 – Responsable Authentification & API (Backend)
 🎯 Rôle principal
 
@@ -218,3 +221,6 @@ APK
 Documentation complète
 
 Suivi de projet
+
+
+
