@@ -26,23 +26,23 @@ public class AuthController {
         return ResponseEntity.ok(authService.register(username, password));
     }
 
-    // @PostMapping("/login")
-    // public ResponseEntity<User> login(@RequestBody Map<String, String> body) {
-    //     String username = body.get("username");
-    //     String password = body.get("password");
-    //     return ResponseEntity.ok(authService.login(username, password));
-    // }
-
+    
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
-            @RequestBody LoginRequest request) {
-
-        String token = authService.authenticate(
+        @RequestBody LoginRequest request) {
+            
+            String token = authService.authenticate(
                 request.getUsername(),
                 request.getPassword()
-        );
-
-        return ResponseEntity.ok(new AuthResponse(token));
+            );
+            
+            return ResponseEntity.ok(new AuthResponse(token));
     }
-
+        
+        // @PostMapping("/login")
+        // public ResponseEntity<User> login(@RequestBody Map<String, String> body) {
+        //     String username = body.get("username");
+        //     String password = body.get("password");
+        //     return ResponseEntity.ok(authService.login(username, password));
+        // }
 }

@@ -74,3 +74,11 @@ CREATE TABLE synchronisation (
     type VARCHAR(20) CHECK (type IN ('IMPORT', 'EXPORT')),
     statut VARCHAR(20) CHECK (statut IN ('SUCCES', 'ECHEC'))
 );
+
+DOCKERISATION-tEST
+demarrage reel
+docker compose up -d
+>> docker compose up -d
+verifier 
+docker ps
+

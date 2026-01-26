@@ -19,6 +19,11 @@ public class AuthService {
 
     @Autowired
     private JwtService jwtService;
+    
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     public String authenticate(String username, String password) {
 
@@ -31,6 +36,7 @@ public class AuthService {
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             user.setFailedAttempts(user.getFailedAttempts() + 1);
+            if (user.getFailedAttempts() >= 3) user.setLocked(true);
             userRepository.save(user);
             throw new RuntimeException("Invalid credentials");
         }
@@ -44,10 +50,6 @@ public class AuthService {
     // private final UserRepository userRepository;
     // private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     public User register(String username, String password) {
         if(userRepository.findByUsername(username).isPresent()) {
@@ -57,6 +59,9 @@ public class AuthService {
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
         user.setRole("USER");
+        user.setLocked(false);
+        user.setFailedAttempts(0);
+
         return userRepository.save(user);
     }
 
