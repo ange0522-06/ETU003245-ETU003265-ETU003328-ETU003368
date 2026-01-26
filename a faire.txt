@@ -1,0 +1,15 @@
+Créer les pages principales (Frontend) ok
+Mettre en place le routage React (Frontend) ok
+Développer le menu de navigation (Frontend) ok 
+Gérer les profils et droits d’accès (Frontend) ok
+Créer les formulaires d’authentification (Frontend) ok
+Simuler les appels API avec des mocks (Frontend) (a voire)
+Préparer les services d’intégration API (Frontend) ok
+Développer l’affichage de la carte et des points (Frontend) ok
+Développer le tableau récapitulatif (Frontend) (a voir en demarrant le back)
+Développer l’espace manager (Frontend) ok
+Appeler les endpoints d’authentification (Backend)
+Appeler les endpoints de signalements et stats (Backend)
+Appeler les endpoints manager (Backend)
+Gérer les réponses et erreurs API (Frontend)
+Soigner le design et l’ergonomie (Frontend)

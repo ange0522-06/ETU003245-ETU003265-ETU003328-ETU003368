@@ -74,6 +74,22 @@ CREATE TABLE synchronisation (
     type VARCHAR(20) CHECK (type IN ('IMPORT', 'EXPORT')),
     statut VARCHAR(20) CHECK (statut IN ('SUCCES', 'ECHEC'))
 );
+---------------------Nampiana--------------
+-- Table des points routiers (issues)
+CREATE TABLE IF NOT EXISTS issues (
+    id SERIAL PRIMARY KEY,
+    titre VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    date DATE,
+    surface DOUBLE PRECISION,
+    budget DOUBLE PRECISION,
+    entreprise VARCHAR(255)
+);
+
+INSERT INTO users (email, password, role, locked, failed_attempts)
+VALUES ('manager@email.com', '$2a$10$9dxcPHsi9d7TXsii8jjzHedSLP3XSVt6Un4LEnqx3QW7nbXZFBrlO', 'manager', false, 0);
 
 DOCKERISATION-tEST
 demarrage reel

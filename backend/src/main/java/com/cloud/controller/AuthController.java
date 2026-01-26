@@ -21,21 +21,19 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<User> register(@RequestBody Map<String, String> body) {
-        String username = body.get("username");
+        String email = body.get("email");
         String password = body.get("password");
-        return ResponseEntity.ok(authService.register(username, password));
+        return ResponseEntity.ok(authService.register(email, password));
     }
 
     
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
         @RequestBody LoginRequest request) {
-            
             String token = authService.authenticate(
-                request.getUsername(),
+                request.getEmail(),
                 request.getPassword()
             );
-            
             return ResponseEntity.ok(new AuthResponse(token));
     }
         
