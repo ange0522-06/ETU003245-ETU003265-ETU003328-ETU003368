@@ -9,7 +9,7 @@ export async function loginApi(email, password) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password })
   });
-  if (!res.ok) throw new Error("Erreur de connexion");
+  if (!res.ok) throw new Error("Email ou mot de passe incorrect");
   return await res.json();
 }
 
@@ -24,16 +24,18 @@ export async function registerApi(email, password) {
 }
 
 export async function getSignalementsApi(token) {
+  const headers = token ? { "Authorization": `Bearer ${token}` } : {};
   const res = await fetch(`${API_URL}/signalements`, {
-    headers: { "Authorization": `Bearer ${token}` }
+    headers
   });
   if (!res.ok) throw new Error("Erreur lors de la récupération des signalements");
   return await res.json();
 }
 
 export async function getStatsApi(token) {
+  const headers = token ? { "Authorization": `Bearer ${token}` } : {};
   const res = await fetch(`${API_URL}/stats`, {
-    headers: { "Authorization": `Bearer ${token}` }
+    headers
   });
   if (!res.ok) throw new Error("Erreur lors de la récupération des stats");
   return await res.json();

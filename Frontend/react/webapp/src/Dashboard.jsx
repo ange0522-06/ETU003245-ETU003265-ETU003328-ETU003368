@@ -1,16 +1,54 @@
 import { useEffect, useState } from "react";
 import { getSignalementsApi, getStatsApi } from "./api";
+import RecapTable from "./RecapTable";
 
 export default function Dashboard() {
   const [signalements, setSignalements] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [points, setPoints] = useState([]);
 
-  // Récupère le token stocké après login
   const token = localStorage.getItem("token");
 
   useEffect(() => {
+    // Si pas de backend, utiliser les données mock pour points
+    const mockPoints = [
+      { 
+        id: 1, 
+        latitude: -18.8792, 
+        longitude: 47.5079,
+        titre: "Route endommagée",
+        status: "en cours",
+        date: "2026-01-15",
+        surface: 20,
+        budget: 1000,
+        entreprise: "ABC Construction"
+      },
+      { 
+        id: 2, 
+        latitude: -18.9100, 
+        longitude: 47.5250,
+        titre: "Travaux de revêtement",
+        status: "nouveau",
+        date: "2026-01-20",
+        surface: 50,
+        budget: 3000,
+        entreprise: "XYZ Travaux"
+      },
+      { 
+        id: 3, 
+        latitude: -18.8650, 
+        longitude: 47.5350,
+        titre: "Réparation de pont",
+        status: "termine",
+        date: "2026-01-10",
+        surface: 100,
+        budget: 5000,
+        entreprise: "InfraPlus"
+      },
+    ];
+
     async function fetchData() {
       setLoading(true);
       setError("");
@@ -22,8 +60,10 @@ export default function Dashboard() {
         ]);
         setSignalements(sig);
         setStats(st);
+        setPoints(sig.length ? sig : mockPoints); // Utilise signalements si dispo, sinon mock
       } catch (err) {
         setError(err.message || "Erreur lors du chargement des données");
+        setPoints(mockPoints);
       } finally {
         setLoading(false);
       }
@@ -32,26 +72,30 @@ export default function Dashboard() {
   }, [token]);
 
   if (loading) return (
-    <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
-      <div className="loading-spinner">
-        <div className="spinner"></div>
-        <p style={{marginTop: '20px', color: '#a0a0e0'}}>Chargement des données...</p>
+    <div className="dashboard-page">
+      <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p style={{marginTop: '20px', color: 'white'}}>Chargement des données...</p>
+        </div>
       </div>
     </div>
   );
   
   if (error) return (
-    <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
-      <div className="error-alert">
-        <span style={{color:'#ff6b6b', fontSize: '3rem'}}>⚠️</span>
-        <h3 style={{color:'#ff6b6b', margin: '20px 0'}}>Erreur de chargement</h3>
-        <p style={{color:'#a0a0e0'}}>{error}</p>
+    <div className="dashboard-page">
+      <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
+        <div className="error-alert">
+          <span style={{color:'#ff6b6b', fontSize: '3rem'}}>⚠️</span>
+          <h3 style={{color:'#ff6b6b', margin: '20px 0'}}>Erreur de chargement</h3>
+          <p style={{color:'#a0a0e0'}}>{error}</p>
+        </div>
       </div>
     </div>
   );
 
   return (
-    <div className="main-content">
+    <div className="dashboard-page">
       <div className="page-header">
         <h1 className="page-title">
           📊 Tableau de bord des travaux
@@ -60,8 +104,11 @@ export default function Dashboard() {
           Suivi en temps réel des signalements et avancement des travaux routiers
         </p>
       </div>
-      
+
       <div className="content-container">
+        {/* Tableau récapitulatif déplacé ici */}
+        <RecapTable points={points} />
+
         {stats && (
           <div className="stats-grid">
             <div className="stat-card">
@@ -87,10 +134,10 @@ export default function Dashboard() {
           </div>
         )}
 
-        <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#fff'}}>
+        <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#2c3e50'}}>
           📋 Liste des signalements
         </h2>
-        
+
         <div style={{overflowX: 'auto'}}>
           <table>
             <thead>

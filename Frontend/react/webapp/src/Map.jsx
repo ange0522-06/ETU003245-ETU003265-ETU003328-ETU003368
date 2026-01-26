@@ -5,38 +5,10 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { useEffect, useState } from "react";
+import DetailsPanel from "./DetailsPanel";
+import { getSignalementsApi } from "./api";
+import { useProfile } from "./ProfileContext";
 
-const points = [
-  { 
-    id: 1, 
-    position: [-18.8792, 47.5079], 
-    title: "Route endommagée",
-    description: "Nid-de-poule important sur 10m de long",
-    status: "en cours",
-    date: "2026-01-15",
-    entreprise: "ABC Construction"
-  },
-  { 
-    id: 2, 
-    position: [-18.9100, 47.5250], 
-    title: "Travaux de revêtement",
-    description: "Renouvellement du revêtement asphaltique",
-    status: "nouveau",
-    date: "2026-01-20",
-    entreprise: "XYZ Travaux"
-  },
-  { 
-    id: 3, 
-    position: [-18.8650, 47.5350], 
-    title: "Réparation de pont",
-    description: "Renforcement structurel du pont",
-    status: "termine",
-    date: "2026-01-10",
-    entreprise: "InfraPlus"
-  },
-];
-
-// Correction des icônes Leaflet pour React
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
@@ -53,7 +25,6 @@ const getStatusColor = (status) => {
   }
 };
 
-// Icône personnalisée
 const createCustomIcon = (color) => {
   return L.divIcon({
     html: `
@@ -88,31 +59,31 @@ const createCustomIcon = (color) => {
     iconAnchor: [16, 32],
     popupAnchor: [0, -32]
   });
-};
+}
 
 export default function Map() {
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedPoint, setSelectedPoint] = useState(null);
+  const { profile } = useProfile();
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/issues")
-      .then(res => {
-        if (!res.ok) throw new Error("Erreur lors du chargement des points");
-        return res.json();
-      })
+    setLoading(true);
+    setError("");
+    getSignalementsApi(localStorage.getItem("token"))
       .then(data => {
         setPoints(data);
         setLoading(false);
       })
       .catch(err => {
-        setError(err.message);
+        setError(err.message || "Erreur lors du chargement des points");
         setLoading(false);
       });
-  }, []);
+  }, [profile]);
 
   return (
-    <div className="main-content">
+    <div className="map-page">
       <div className="page-header">
         <h1 className="page-title">
           🗺️ Carte des travaux
@@ -121,36 +92,54 @@ export default function Map() {
           Visualisation géographique des points de travaux en cours et planifiés
         </p>
       </div>
-      <div className="content-container" style={{height: 600, margin: '0 auto', maxWidth: 900}}>
-        {loading && <div>Chargement des points...</div>}
-        {error && <div style={{color: 'red'}}>{error}</div>}
-        {!loading && !error && (
-          <MapContainer center={[-18.8792, 47.5079]} zoom={13} style={{height: 600, width: '100%'}}>
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution="&copy; OpenStreetMap contributors"
-            />
-            {points.map((pt, idx) => (
-              <Marker
-                key={pt.id || idx}
-                position={[pt.latitude, pt.longitude]}
-                icon={createCustomIcon(getStatusColor(pt.status))}
-              >
-                <Popup>
-                  <div>
-                    <strong>{pt.titre || 'Travaux routier'}</strong><br/>
-                    <span>Status : <b style={{color: getStatusColor(pt.status)}}>{pt.status}</b></span><br/>
-                    <span>Date : {pt.date || '-'}</span><br/>
-                    <span>Surface : {pt.surface || '-'} m²</span><br/>
-                    <span>Budget : {pt.budget || '-'} Ar</span><br/>
-                    <span>Entreprise : {pt.entreprise || '-'}</span>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        )}
+      
+      <div style={{display: 'flex', alignItems: 'flex-start', gap: '20px', flexWrap: 'wrap'}}>
+        <div className="content-container" style={{flex: 1, minHeight: 600, padding: '20px'}}>
+          {loading && <div style={{textAlign: 'center', padding: '40px', color: '#2c3e50'}}>Chargement des points...</div>}
+          {error && <div style={{color: 'red', textAlign: 'center'}}>{error}</div>}
+          {!loading && !error && (
+            <MapContainer 
+              center={[-18.8792, 47.5079]} 
+              zoom={13} 
+              style={{height: 600, width: '100%', borderRadius: '12px'}}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution="&copy; OpenStreetMap contributors"
+              />
+              {points.map((pt) => (
+                <Marker
+                  key={pt.id}
+                  position={[pt.latitude, pt.longitude]}
+                  icon={createCustomIcon(getStatusColor(pt.status))}
+                  eventHandlers={{
+                    click: () => setSelectedPoint(pt),
+                    mouseover: (e) => e.target.openPopup(),
+                    mouseout: (e) => e.target.closePopup(),
+                  }}
+                >
+                  <Popup>
+                    <div style={{padding: '10px'}}>
+                      <strong style={{fontSize: '16px'}}>{pt.titre || 'Travaux routier'}</strong><br/>
+                      <span>Status : <b style={{color: getStatusColor(pt.status)}}>{pt.status}</b></span><br/>
+                      <span>Date : {pt.date || '-'} </span><br/>
+                      <span>Surface : {pt.surface || '-'} m²</span><br/>
+                      <span>Budget : {pt.budget || '-'} Ar</span><br/>
+                      <span>Entreprise : {pt.entreprise || '-'}</span>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          )}
+        </div>
+        
+        <div className="content-container" style={{width: '350px', minHeight: 600, padding: '20px'}}>
+          <DetailsPanel point={selectedPoint} />
+        </div>
       </div>
+      
+      {/* Tableau récapitulatif déplacé dans Dashboard */}
     </div>
   );
 }

@@ -1,17 +1,33 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-import Navbar from "./Navbar";
-import Auth from "./Auth";
-import Map from "./Map";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import Sidebar from "./Sidebar";
 import Dashboard from "./Dashboard";
 import Manager from "./Manager";
+import Map from "./Map";
+import Auth from "./Auth";
+import { ProfileProvider } from "./ProfileContext";
 import "./assets/ui.css";
 
-function App() {
+import { useProfile } from "./ProfileContext";
+
+function AppContent() {
+  const location = useLocation();
+  const isAuthPage = location.pathname === "/auth";
+  const { profile } = useProfile();
+
+  // Redirection visiteur : dashboard ou map autorisés, sinon redirige dashboard
+  if (
+    profile === "visiteur" &&
+    location.pathname !== "/dashboard" &&
+    location.pathname !== "/map" &&
+    location.pathname !== "/auth"
+  ) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
-    <BrowserRouter>
-      <Navbar />
-      <div className="main-container">
+    <div className="app-container">
+      {!isAuthPage && <Sidebar />}
+      <div className="main-content-area">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -20,7 +36,17 @@ function App() {
           <Route path="/auth" element={<Auth />} />
         </Routes>
       </div>
-    </BrowserRouter>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <ProfileProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </ProfileProvider>
   );
 }
 

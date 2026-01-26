@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi } from "./api";
 
-// Les données sont maintenant chargées depuis l'API backend
-
 export default function Manager() {
   const [signalements, setSignalements] = useState([]);
   const [users, setUsers] = useState([]);
@@ -29,7 +27,6 @@ export default function Manager() {
     fetchData();
   }, [token]);
 
-  // Les fonctions de modification appellent maintenant l'API backend
   const changeStatus = async (id, newStatus) => {
     try {
       await updateSignalementStatusApi(id, newStatus, token);
@@ -66,24 +63,30 @@ export default function Manager() {
   };
 
   if (loading) return (
-    <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
-      <div className="loading-spinner">
-        <div className="spinner"></div>
-        <p style={{marginTop: '20px', color: '#a0a0e0'}}>Chargement des données...</p>
+    <div className="manager-page">
+      <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p style={{marginTop: '20px', color: 'white'}}>Chargement des données...</p>
+        </div>
       </div>
     </div>
   );
+  
   if (error) return (
-    <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
-      <div className="error-alert">
-        <span style={{color:'#ff6b6b', fontSize: '3rem'}}>⚠️</span>
-        <h3 style={{color:'#ff6b6b', margin: '20px 0'}}>Erreur de chargement</h3>
-        <p style={{color:'#a0a0e0'}}>{error}</p>
+    <div className="manager-page">
+      <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
+        <div className="error-alert">
+          <span style={{color:'#ff6b6b', fontSize: '3rem'}}>⚠️</span>
+          <h3 style={{color:'#ff6b6b', margin: '20px 0'}}>Erreur de chargement</h3>
+          <p style={{color:'#a0a0e0'}}>{error}</p>
+        </div>
       </div>
     </div>
   );
+  
   return (
-    <div className="main-content">
+    <div className="manager-page">
       <div className="page-header">
         <h1 className="page-title">
           👨‍💼 Espace Manager
@@ -94,7 +97,7 @@ export default function Manager() {
       </div>
 
       <div className="content-container">
-        <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#fff'}}>
+        <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#2c3e50'}}>
           📋 Gestion des signalements
         </h2>
         
@@ -146,7 +149,14 @@ export default function Manager() {
                     <select 
                       value={s.status} 
                       onChange={e => changeStatus(s.id, e.target.value)}
-                      style={{minWidth: '140px'}}
+                      style={{
+                        minWidth: '140px',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '2px solid #ddd',
+                        backgroundColor: 'white',
+                        cursor: 'pointer'
+                      }}
                     >
                       <option value="nouveau">🆕 Nouveau</option>
                       <option value="en cours">🔄 En cours</option>
@@ -159,7 +169,7 @@ export default function Manager() {
           </table>
         </div>
 
-        <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#fff'}}>
+        <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#2c3e50'}}>
           👥 Gestion des utilisateurs
         </h2>
         
@@ -219,26 +229,26 @@ export default function Manager() {
           </table>
         </div>
 
-        <div className="card" style={{marginTop: '40px', background: 'rgba(74, 84, 225, 0.1)'}}>
-          <h3 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px'}}>
+        <div className="card" style={{marginTop: '40px', background: 'rgba(255, 255, 255, 0.9)'}}>
+          <h3 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', color: '#2c3e50'}}>
             📊 Statistiques rapides
           </h3>
           <div style={{display: 'flex', gap: '30px', flexWrap: 'wrap'}}>
             <div>
               <div style={{fontSize: '2rem', color: '#4a54e1'}}>{signalements.length}</div>
-              <div style={{color: '#a0a0e0', fontSize: '0.9rem'}}>Signalements</div>
+              <div style={{color: '#7f8c8d', fontSize: '0.9rem'}}>Signalements</div>
             </div>
             <div>
               <div style={{fontSize: '2rem', color: '#00b894'}}>
                 {users.filter(u => !u.blocked).length}
               </div>
-              <div style={{color: '#a0a0e0', fontSize: '0.9rem'}}>Utilisateurs actifs</div>
+              <div style={{color: '#7f8c8d', fontSize: '0.9rem'}}>Utilisateurs actifs</div>
             </div>
             <div>
               <div style={{fontSize: '2rem', color: '#ffc107'}}>
                 {signalements.filter(s => s.status === 'en cours').length}
               </div>
-              <div style={{color: '#a0a0e0', fontSize: '0.9rem'}}>En cours</div>
+              <div style={{color: '#7f8c8d', fontSize: '0.9rem'}}>En cours</div>
             </div>
           </div>
         </div>

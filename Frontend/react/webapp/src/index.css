@@ -24,10 +24,14 @@ a:hover {
 
 body {
   margin: 0;
+  padding: 0;
   display: flex;
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background: #fffbe6;
+  color: #ffc107;
+  font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
 }
 
 h1 {
@@ -65,4 +69,97 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+.main-content {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #fffbe6;
+}
+
+.page-header {
+  padding: 32px 0 16px 0;
+  text-align: center;
+}
+
+.page-title {
+  color: #ffc107;
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.page-subtitle {
+  color: #bfa700;
+  font-size: 1.2rem;
+  margin-bottom: 24px;
+}
+
+.content-container {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: #fffbe6;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px #ffe082;
+  margin: 0 32px 32px 32px;
+  min-height: 600px;
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 80vh !important;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px #ffe082;
+}
+
+/* Détails à droite */
+.DetailsPanel {
+  min-width: 350px;
+  max-width: 400px;
+  background: #fffde7;
+  border-left: 4px solid #ffc107;
+  padding: 32px 24px;
+  color: #222;
+  box-shadow: 0 2px 16px #ffe082;
+  height: 80vh;
+  border-radius: 0 16px 16px 0;
+}
+
+/* Tableau de récapitulation */
+.RecapTable {
+  background: #fffde7;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px #ffe082;
+  padding: 24px;
+  margin: 32px auto;
+  max-width: 700px;
+  color: #222;
+}
+
+.RecapTable table {
+  width: 100%;
+  font-size: 1.1rem;
+  border-collapse: collapse;
+}
+
+.RecapTable td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #ffe082;
+}
+
+.RecapTable tr:last-child td {
+  border-bottom: none;
+}
+
+/* Pour les liens, boutons, etc. */
+a, button, .sidebar-menu-item {
+  color: #ffc107;
+}
+
+/* Pour les labels de formulaire */
+label, .form-label {
+  color: #ffc107;
 }

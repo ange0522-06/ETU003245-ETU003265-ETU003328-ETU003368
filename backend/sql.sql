@@ -91,6 +91,13 @@ CREATE TABLE IF NOT EXISTS issues (
 INSERT INTO users (email, password, role, locked, failed_attempts)
 VALUES ('manager@email.com', '$2a$10$9dxcPHsi9d7TXsii8jjzHedSLP3XSVt6Un4LEnqx3QW7nbXZFBrlO', 'manager', false, 0);
 
+
+INSERT INTO issues (budget, date, entreprise, latitude, longitude, status, surface, titre)
+VALUES
+  (1000, '2026-01-15', 'ABC Construction', -18.8792, 47.5079, 'en cours', 20, 'Route endommagée'),
+  (3000, '2026-01-20', 'XYZ Travaux', -18.9100, 47.5250, 'nouveau', 50, 'Travaux de revêtement'),
+  (5000, '2026-01-10', 'InfraPlus', -18.8650, 47.5350, 'termine', 100, 'Réparation de pont');
+
 DOCKERISATION-tEST
 demarrage reel
 docker compose up -d

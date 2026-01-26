@@ -13,3 +13,17 @@ Appeler les endpoints de signalements et stats (Backend)
 Appeler les endpoints manager (Backend)
 Gérer les réponses et erreurs API (Frontend)
 Soigner le design et l’ergonomie (Frontend)
+
+
+Maintenant,je veux qu'on realise ce que dis l'image;lorsque la personne est Visteur(sans compte),on accede au racine du projet web,elle voit un paragraphe de bienvenue et la carte avec  les différents points
+représentants les problèmes routiers.
+On doit voir a droite de la carte les details du point selectionnes.
+Lorsqu’on survole un point, on doit voir les infos
+sur le problème ( date, status (nouveau, en cours,
+terminé), surface en m2, budget, entreprise
+concerné)
+En dois avoir aussi r le tableau de récapitulation actuel ( Nb de
+point, total surface, avancement en %, total
+budget)
+
+Donc enlever les autres header inutiles si la personne est visiteur,garder toujours l'icone de connexion
