@@ -42,6 +42,7 @@ public class SecurityConfig {
                                 "/api/stats",
                                 "/api/auth/firebase/**",
                                 "/api/test/**",
+                                "/api/admin/users/**",
                                  "/swagger-ui/**",
                                  "/v3/api-docs/**"
                 ).permitAll()

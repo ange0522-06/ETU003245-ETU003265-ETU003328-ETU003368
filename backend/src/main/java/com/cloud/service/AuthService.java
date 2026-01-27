@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class AuthService {
@@ -19,6 +20,9 @@ public class AuthService {
 
     @Autowired
     private JwtService jwtService;
+
+    @Value("${security.login.max-attempts:3}")
+    private int maxAttempts;
     
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
@@ -35,11 +39,17 @@ public class AuthService {
         }
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
+
             user.setFailedAttempts(user.getFailedAttempts() + 1);
-            if (user.getFailedAttempts() >= 3) user.setLocked(true);
+
+            if (user.getFailedAttempts() >= maxAttempts) {
+                user.setLocked(true);
+            }
+
             userRepository.save(user);
             throw new RuntimeException("Invalid credentials");
         }
+
 
         user.setFailedAttempts(0);
         userRepository.save(user);
