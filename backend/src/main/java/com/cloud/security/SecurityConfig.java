@@ -32,6 +32,7 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/firebase/**",
                                 "/api/test/**",
+                                "/api/admin/users/**",
                                  "/swagger-ui/**",
                                  "/v3/api-docs/**"
                 ).permitAll()

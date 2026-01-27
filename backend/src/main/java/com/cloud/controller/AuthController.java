@@ -38,11 +38,5 @@ public class AuthController {
             
             return ResponseEntity.ok(new AuthResponse(token));
     }
-        
-        // @PostMapping("/login")
-        // public ResponseEntity<User> login(@RequestBody Map<String, String> body) {
-        //     String username = body.get("username");
-        //     String password = body.get("password");
-        //     return ResponseEntity.ok(authService.login(username, password));
-        // }
+
 }

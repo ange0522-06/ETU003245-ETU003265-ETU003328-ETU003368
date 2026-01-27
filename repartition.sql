@@ -15,23 +15,23 @@ Mise en place de l’authentification
 
 Inscription (email / mot de passe)
 
-Connexion
+Connexion'
 
-Modification des informations utilisateur
+-- Modification des informations utilisateur
 
-Gestion Firebase (en ligne) et PostgreSQL en local (Docker)
+-- Gestion Firebase (en ligne) et PostgreSQL en local (Docker)
 
-Détection connexion Internet
+-- Détection connexion Internet
 
-Bascule automatique Firebase ↔ Base locale
+-- Bascule automatique Firebase ↔ Base locale
 
-Gestion de la sécurité
+-- Gestion de la sécurité
 
-Durée de vie des sessions
+-- Durée de vie des sessions
 
-Limitation des tentatives de connexion (par défaut : 3)
+--Limitation des tentatives de connexion (par défaut : 3)
 
-Blocage automatique du compte
+'Blocage automatique du compte
 
 API REST pour débloquer un utilisateur
 
