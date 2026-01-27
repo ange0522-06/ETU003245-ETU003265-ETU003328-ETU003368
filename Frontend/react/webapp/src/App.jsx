@@ -1,35 +1,53 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import Sidebar from "./Sidebar";
+import Dashboard from "./Dashboard";
+import Manager from "./Manager";
+import Map from "./Map";
+import Auth from "./Auth";
+import { ProfileProvider } from "./ProfileContext";
+import "./assets/ui.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+import { useProfile } from "./ProfileContext";
+
+function AppContent() {
+  const location = useLocation();
+  const isAuthPage = location.pathname === "/auth";
+  const { profile } = useProfile();
+
+  // Redirection visiteur : dashboard ou map autorisés, sinon redirige dashboard
+  if (
+    profile === "visiteur" &&
+    location.pathname !== "/dashboard" &&
+    location.pathname !== "/map" &&
+    location.pathname !== "/auth"
+  ) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="app-container">
+      {!isAuthPage && <Sidebar />}
+      <div className="main-content-area">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/manager" element={<Manager />} />
+          <Route path="/map" element={<Map />} />
+          <Route path="/auth" element={<Auth />} />
+        </Routes>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+function App() {
+  return (
+    <ProfileProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </ProfileProvider>
+  );
+}
+
+export default App;

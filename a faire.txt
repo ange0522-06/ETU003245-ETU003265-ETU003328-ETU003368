@@ -1,0 +1,29 @@
+Créer les pages principales (Frontend) ok
+Mettre en place le routage React (Frontend) ok
+Développer le menu de navigation (Frontend) ok 
+Gérer les profils et droits d’accès (Frontend) ok
+Créer les formulaires d’authentification (Frontend) ok
+Simuler les appels API avec des mocks (Frontend) (a voire)
+Préparer les services d’intégration API (Frontend) ok
+Développer l’affichage de la carte et des points (Frontend) ok
+Développer le tableau récapitulatif (Frontend) (a voir en demarrant le back)
+Développer l’espace manager (Frontend) ok
+Appeler les endpoints d’authentification (Backend)
+Appeler les endpoints de signalements et stats (Backend)
+Appeler les endpoints manager (Backend)
+Gérer les réponses et erreurs API (Frontend)
+Soigner le design et l’ergonomie (Frontend)
+
+
+Maintenant,je veux qu'on realise ce que dis l'image;lorsque la personne est Visteur(sans compte),on accede au racine du projet web,elle voit un paragraphe de bienvenue et la carte avec  les différents points
+représentants les problèmes routiers.
+On doit voir a droite de la carte les details du point selectionnes.
+Lorsqu’on survole un point, on doit voir les infos
+sur le problème ( date, status (nouveau, en cours,
+terminé), surface en m2, budget, entreprise
+concerné)
+En dois avoir aussi r le tableau de récapitulation actuel ( Nb de
+point, total surface, avancement en %, total
+budget)
+
+Donc enlever les autres header inutiles si la personne est visiteur,garder toujours l'icone de connexion
