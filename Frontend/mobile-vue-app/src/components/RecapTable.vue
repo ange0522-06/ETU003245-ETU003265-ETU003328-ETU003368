@@ -199,6 +199,48 @@ tbody tr:hover {
   font-weight: bold;
 }
 
+/* Pagination Styles */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin: 20px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.pagination-btn {
+  padding: 8px 16px;
+  border: 2px solid #3498db;
+  background: white;
+  color: #3498db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #3498db;
+  color: white;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #bdc3c7;
+  color: #bdc3c7;
+}
+
+.pagination-info {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 768px) {
   .summary {
     flex-direction: column;

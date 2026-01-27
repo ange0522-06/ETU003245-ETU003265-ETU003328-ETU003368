@@ -7,13 +7,25 @@
       </div>
 
       <div class="modal-body">
-        <div v-if="userReports.length === 0" class="no-reports">
-          <p>Vous n'avez encore aucun signalement.</p>
+        <div class="reports-controls" style="display:flex; gap:12px; align-items:center; margin-bottom:12px">
+          <label style="display:flex; align-items:center; gap:8px">
+            <span style="font-size:0.9rem; color:#7f8c8d">Du</span>
+            <input type="date" v-model="dateFrom" />
+          </label>
+          <label style="display:flex; align-items:center; gap:8px">
+            <span style="font-size:0.9rem; color:#7f8c8d">Au</span>
+            <input type="date" v-model="dateTo" />
+          </label>
+          <button class="btn" @click="resetPaging">Réinitialiser</button>
+        </div>
+
+        <div v-if="visibleReports.length === 0" class="no-reports">
+          <p>Vous n'avez encore aucun signalement sur cette période.</p>
         </div>
 
         <div v-else class="reports-list">
           <div
-            v-for="report in userReports"
+            v-for="report in visibleReports"
             :key="report.id"
             class="report-item"
             @click="selectReport(report)"
@@ -81,10 +93,10 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="modal-footer">
-        <button @click="closeModal" class="btn-secondary">Fermer</button>
+        <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center; padding-top:10px; border-top:1px solid #ecf0f1">
+          <button v-if="hasMore" @click="loadMore" class="btn">Charger plus</button>
+          <button @click="closeModal" class="btn-secondary">Fermer</button>
+        </div>
       </div>
     </div>
   </div>
@@ -110,9 +122,36 @@ const props = defineProps({
 
 const emit = defineEmits(['close']);
 
+const dateFrom = ref('');
+const dateTo = ref('');
+const page = ref(1);
+const pageSize = ref(10);
+
 const userReports = computed(() => {
-  return props.reports.filter(report => report.userId === props.currentUserId);
+  return props.reports.filter(report => report.userId === props.currentUserId).sort((a,b) => {
+    // sort by date desc if available
+    if (a.date && b.date) return new Date(b.date) - new Date(a.date);
+    return 0;
+  });
 });
+
+const filteredByDate = computed(() => {
+  let list = userReports.value.slice();
+  const from = dateFrom.value ? new Date(dateFrom.value) : null;
+  const to = dateTo.value ? new Date(dateTo.value) : null;
+  if (from) list = list.filter(r => r.date && new Date(r.date) >= from);
+  if (to) {
+    const toEnd = new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23,59,59,999);
+    list = list.filter(r => r.date && new Date(r.date) <= toEnd);
+  }
+  return list;
+});
+
+const visibleReports = computed(() => {
+  return filteredByDate.value.slice(0, page.value * pageSize.value);
+});
+
+const hasMore = computed(() => filteredByDate.value.length > visibleReports.value.length);
 
 const selectedReport = ref(null);
 
@@ -127,6 +166,15 @@ const getStatusClass = (status) => {
 
 const selectReport = (report) => {
   selectedReport.value = report;
+};
+
+const resetPaging = () => {
+  page.value = 1;
+  selectedReport.value = null;
+};
+
+const loadMore = () => {
+  page.value += 1;
 };
 
 const closeModal = () => {
