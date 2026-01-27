@@ -35,12 +35,15 @@ public class SecurityConfig {
                 .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
-                                "/api/issues",
-                                "/api/issues/**",
+                                "/api/signalements",
+                                "/api/signalements/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/api/signalements",
-                                "/api/stats"
+                                "/api/stats",
+                                "/api/auth/firebase/**",
+                                "/api/test/**",
+                                 "/swagger-ui/**",
+                                 "/v3/api-docs/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
