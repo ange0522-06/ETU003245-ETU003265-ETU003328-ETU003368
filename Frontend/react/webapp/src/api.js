@@ -28,7 +28,10 @@ export async function loginApi(email, password) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password })
   });
-  if (!res.ok) throw new Error("Email ou mot de passe incorrect");
+  if (!res.ok) {
+    const msg = await res.text();
+    throw new Error(msg || "Email ou mot de passe incorrect");
+  }
   return await res.json();
 }
 

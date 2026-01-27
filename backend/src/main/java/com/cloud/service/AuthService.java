@@ -1,3 +1,4 @@
+ 
 package com.cloud.service;
 
 import com.cloud.model.User;
@@ -54,7 +55,8 @@ public class AuthService {
         user.setFailedAttempts(0);
         userRepository.save(user);
 
-        return jwtService.generateToken(user.getEmail(), user.getRole());
+        String springRole = "ROLE_" + user.getRole().toUpperCase();
+        return jwtService.generateToken(user.getEmail(), springRole);
     }
 
     // private final UserRepository userRepository;
@@ -73,7 +75,7 @@ public class AuthService {
         User user = new User();
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
-        user.setRole(role != null ? role.toLowerCase() : "user");
+        user.setRole(role != null ? role.toLowerCase() : "user"); // Stocke "user" ou "manager" en base, mais le JWT aura ROLE_...
         user.setLocked(false);
         user.setFailedAttempts(0);
         return userRepository.save(user);
@@ -86,5 +88,51 @@ public class AuthService {
             throw new RuntimeException("Invalid password");
         }
         return user;
+    }
+       // Classe utilitaire pour le résultat de login
+    public static class LoginResult {
+        private boolean success;
+        private boolean locked;
+        private int failedAttempts;
+        private String token;
+        private String role;
+        public LoginResult(boolean success, boolean locked, int failedAttempts, String token, String role) {
+            this.success = success;
+            this.locked = locked;
+            this.failedAttempts = failedAttempts;
+            this.token = token;
+            this.role = role;
+        }
+        public boolean isSuccess() { return success; }
+        public boolean isLocked() { return locked; }
+        public int getFailedAttempts() { return failedAttempts; }
+        public String getToken() { return token; }
+        public String getRole() { return role; }
+    }
+
+    // Nouvelle méthode pour login avec feedback détaillé
+    public LoginResult tryLogin(String email, String password) {
+        Optional<User> optUser = userRepository.findByEmail(email);
+        if (!optUser.isPresent()) {
+            return new LoginResult(false, false, 0, null, null);
+        }
+        User user = optUser.get();
+        if (user.isLocked()) {
+            return new LoginResult(false, true, user.getFailedAttempts(), null, null);
+        }
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            user.setFailedAttempts(user.getFailedAttempts() + 1);
+            if (user.getFailedAttempts() >= maxAttempts) {
+                user.setLocked(true);
+            }
+            userRepository.save(user);
+            return new LoginResult(false, user.isLocked(), user.getFailedAttempts(), null, null);
+        }
+        // Succès : reset failedAttempts
+        user.setFailedAttempts(0);
+        userRepository.save(user);
+        String springRole = "ROLE_" + user.getRole().toUpperCase();
+        String token = jwtService.generateToken(user.getEmail(), springRole);
+        return new LoginResult(true, false, 0, token, user.getRole());
     }
 }

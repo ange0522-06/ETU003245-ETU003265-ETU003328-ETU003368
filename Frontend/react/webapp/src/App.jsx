@@ -7,6 +7,8 @@ import Auth from "./Auth";
 import { ProfileProvider } from "./ProfileContext";
 import "./assets/ui.css";
 
+import UnblockUsers from "./UnblockUsers";
+
 import { useProfile } from "./ProfileContext";
 
 function AppContent() {
@@ -32,6 +34,7 @@ function AppContent() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/manager" element={<Manager />} />
+           <Route path="/unblock-users" element={<UnblockUsers />} />
           <Route path="/map" element={<Map />} />
           <Route path="/auth" element={<Auth />} />
         </Routes>
