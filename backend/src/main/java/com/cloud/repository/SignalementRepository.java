@@ -1,9 +1,9 @@
 package com.cloud.repository;
 
-import com.cloud.model.Issue;
+import com.cloud.model.Signalement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface IssueRepository extends JpaRepository<Issue, Long> {
+public interface SignalementRepository extends JpaRepository<Signalement, Long> {
 }

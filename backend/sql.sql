@@ -75,28 +75,21 @@ CREATE TABLE synchronisation (
     statut VARCHAR(20) CHECK (statut IN ('SUCCES', 'ECHEC'))
 );
 ---------------------Nampiana--------------
--- Table des points routiers (issues)
-CREATE TABLE IF NOT EXISTS issues (
-    id SERIAL PRIMARY KEY,
-    titre VARCHAR(255) NOT NULL,
-    status VARCHAR(50) NOT NULL,
-    latitude DOUBLE PRECISION NOT NULL,
-    longitude DOUBLE PRECISION NOT NULL,
-    date DATE,
-    surface DOUBLE PRECISION,
-    budget DOUBLE PRECISION,
-    entreprise VARCHAR(255)
-);
 
 INSERT INTO users (email, password, role, locked, failed_attempts)
 VALUES ('manager@email.com', '$2a$10$9dxcPHsi9d7TXsii8jjzHedSLP3XSVt6Un4LEnqx3QW7nbXZFBrlO', 'manager', false, 0);
 
-
-INSERT INTO issues (budget, date, entreprise, latitude, longitude, status, surface, titre)
+INSERT INTO signalement (budget, date_signalement, description, entreprise, latitude, longitude, statut, surface_m2, titre, id_user)
 VALUES
-  (1000, '2026-01-15', 'ABC Construction', -18.8792, 47.5079, 'en cours', 20, 'Route endommagée'),
-  (3000, '2026-01-20', 'XYZ Travaux', -18.9100, 47.5250, 'nouveau', 50, 'Travaux de revêtement'),
-  (5000, '2026-01-10', 'InfraPlus', -18.8650, 47.5350, 'termine', 100, 'Réparation de pont');
+  (12000, '2026-01-10 09:00:00', 'Nid de poule important', 'Colas', -18.8792, 47.5079, 'nouveau', 15, 'Route dégradée', 1),
+  (5000, '2026-01-15 14:30:00', 'Signalement de fissures', 'Eiffage', -18.9100, 47.5200, 'en cours', 8, 'Fissures chaussée', 2),
+  (8000, '2026-01-20 11:00:00', 'Trous sur la route', 'Vinci', -18.9000, 47.5100, 'termine', 10, 'Trous route', 3),
+  (15000, '2026-01-22 16:00:00', 'Effondrement partiel', 'Colas', -18.8800, 47.5000, 'nouveau', 20, 'Effondrement', 4),
+  (7000, '2026-01-25 10:00:00', 'Déformation de la chaussée', 'Eiffage', -18.8850, 47.5050, 'en cours', 12, 'Déformation', 5),
+  (9500, '2026-01-26 13:00:00', 'Problème de drainage', 'Vinci', -18.8880, 47.5080, 'nouveau', 9, 'Drainage', 6),
+  (20000, '2026-01-27 08:30:00', 'Route barrée', 'Colas', -18.8920, 47.5120, 'termine', 25, 'Route barrée', 7);
+
+
 
 DOCKERISATION-tEST
 demarrage reel

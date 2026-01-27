@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import com.cloud.auth.LoginRequest;
+import com.cloud.dto.RegisterRequest;
 
 
 @RestController
@@ -20,21 +21,21 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        String password = body.get("password");
-        return ResponseEntity.ok(authService.register(email, password));
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        try {
+            User user = authService.register(request.getEmail(), request.getPassword(), request.getRole());
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
     }
 
     
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(
-        @RequestBody LoginRequest request) {
-            String token = authService.authenticate(
-                request.getEmail(),
-                request.getPassword()
-            );
-            return ResponseEntity.ok(new AuthResponse(token));
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+        User user = authService.login(request.getEmail(), request.getPassword());
+        String token = authService.authenticate(request.getEmail(), request.getPassword());
+        return ResponseEntity.ok(new AuthResponse(token, user.getRole()));
     }
         
         // @PostMapping("/login")

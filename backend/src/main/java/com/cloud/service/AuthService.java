@@ -44,21 +44,26 @@ public class AuthService {
         user.setFailedAttempts(0);
         userRepository.save(user);
 
-        return jwtService.generateToken(user.getEmail());
+        return jwtService.generateToken(user.getEmail(), user.getRole());
     }
 
     // private final UserRepository userRepository;
     // private final PasswordEncoder passwordEncoder;
 
 
-    public User register(String email, String password) {
+    public User register(String email, String password, String role) {
         if(userRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("Email already exists");
+        }
+        if ("manager".equalsIgnoreCase(role)) {
+            if (userRepository.existsByRoleIgnoreCase("manager")) {
+                throw new RuntimeException("Un compte manager existe déjà.");
+            }
         }
         User user = new User();
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
-        user.setRole("USER");
+        user.setRole(role != null ? role.toLowerCase() : "user");
         user.setLocked(false);
         user.setFailedAttempts(0);
         return userRepository.save(user);

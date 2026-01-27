@@ -1,3 +1,22 @@
+// Synchronisation Firebase (Manager)
+export async function syncSignalementsToFirebase(token) {
+  const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+  const res = await fetch(`${API_URL}/firebase/signalements/sync`, {
+    method: "POST",
+    headers
+  });
+  if (!res.ok) throw new Error("Erreur lors de la synchronisation vers Firebase");
+  return await res.json();
+}
+
+export async function getSignalementsFromFirebase(token) {
+  const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+  const res = await fetch(`${API_URL}/firebase/signalements`, {
+    headers
+  });
+  if (!res.ok) throw new Error("Erreur lors de la récupération depuis Firebase");
+  return await res.json();
+}
 // src/api.js
 // Services d'intégration API pour le frontend
 
@@ -13,23 +32,38 @@ export async function loginApi(email, password) {
   return await res.json();
 }
 
-export async function registerApi(email, password) {
+export async function registerApi(email, password, role = "user") {
   const res = await fetch(`${API_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password, role })
   });
-  if (!res.ok) throw new Error("Erreur d'inscription");
+  if (!res.ok) {
+    const msg = await res.text();
+    throw new Error(msg);
+  }
   return await res.json();
 }
 
 export async function getSignalementsApi(token) {
   const headers = token ? { "Authorization": `Bearer ${token}` } : {};
-  const res = await fetch(`${API_URL}/signalements`, {
-    headers
-  });
+  const res = await fetch(`${API_URL}/signalements`, { headers });
   if (!res.ok) throw new Error("Erreur lors de la récupération des signalements");
-  return await res.json();
+  const data = await res.json();
+  // mapping des champs backend -> frontend
+  return data.map(s => ({
+    id: s.idSignalement,
+    status: s.statut,
+    date: s.dateSignalement ? s.dateSignalement.split('T')[0] : '',
+    surface: s.surfaceM2,
+    budget: s.budget,
+    entreprise: s.entreprise,
+    titre: s.titre,
+    latitude: s.latitude,
+    longitude: s.longitude,
+    description: s.description,
+    id_user: s.utilisateur ? s.utilisateur.id : s.id_user
+  }));
 }
 
 export async function getStatsApi(token) {

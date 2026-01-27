@@ -1,7 +1,28 @@
 import { useState, useEffect } from "react";
-import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi } from "./api";
+import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase } from "./api";
+import { useProfile } from "./ProfileContext";
+  // Synchronisation Firebase
+  const handleSyncToFirebase = async () => {
+    try {
+      await syncSignalementsToFirebase(token);
+      alert("✅ Signalements exportés vers Firebase !");
+    } catch (err) {
+      alert(err.message || "Erreur lors de la synchronisation vers Firebase");
+    }
+  };
+
+  const handleGetFromFirebase = async () => {
+    try {
+      const sig = await getSignalementsFromFirebase(token);
+      setSignalements(sig);
+      alert("✅ Signalements récupérés depuis Firebase !");
+    } catch (err) {
+      alert(err.message || "Erreur lors de la récupération depuis Firebase");
+    }
+  };
 
 export default function Manager() {
+  const { profile } = useProfile();
   const [signalements, setSignalements] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +83,19 @@ export default function Manager() {
     }
   };
 
+  if (profile !== "manager") {
+    return (
+      <div className="manager-page">
+        <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
+          <div className="error-alert">
+            <span style={{color:'#ff6b6b', fontSize: '3rem'}}>⛔</span>
+            <h3 style={{color:'#ff6b6b', margin: '20px 0'}}>Accès réservé au manager</h3>
+            <p style={{color:'#a0a0e0'}}>Vous devez être connecté en tant que manager pour accéder à cette page.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (loading) return (
     <div className="manager-page">
       <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
@@ -97,6 +131,14 @@ export default function Manager() {
       </div>
 
       <div className="content-container">
+        <div style={{display: 'flex', gap: '16px', marginBottom: 24}}>
+          {profile === "manager" && (
+            <>
+              <button onClick={handleSyncToFirebase} style={{background: '#4caf50', color: 'white', padding: '10px 18px', borderRadius: 6, border: 'none', fontWeight: 600, cursor: 'pointer'}}>⬆️ Synchroniser vers Firebase</button>
+              <button onClick={handleGetFromFirebase} style={{background: '#2196f3', color: 'white', padding: '10px 18px', borderRadius: 6, border: 'none', fontWeight: 600, cursor: 'pointer'}}>⬇️ Récupérer depuis Firebase</button>
+            </>
+          )}
+        </div>
         <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#2c3e50'}}>
           📋 Gestion des signalements
         </h2>

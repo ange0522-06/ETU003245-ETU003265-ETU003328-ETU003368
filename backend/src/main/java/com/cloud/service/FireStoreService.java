@@ -1,3 +1,4 @@
+
 package com.cloud.service;
 
 import com.google.api.core.ApiFuture;
@@ -9,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -103,5 +105,53 @@ public class FireStoreService {
             log.warn("Firestore non disponible: {}", e.getMessage());
             return false;
         }
+    }
+    /**
+     * Sauvegarder tous les signalements SQL dans Firestore (collection signalements)
+     */
+    public int saveAllSignalementsToFirestore(List<com.cloud.model.Signalement> signalements) {
+        Firestore db = getFirestore();
+        int count = 0;
+        for (com.cloud.model.Signalement s : signalements) {
+            try {
+                Map<String, Object> data = new HashMap<>();
+                data.put("idSignalement", s.getIdSignalement());
+                data.put("titre", s.getTitre());
+                data.put("description", s.getDescription());
+                data.put("latitude", s.getLatitude());
+                data.put("longitude", s.getLongitude());
+                data.put("dateSignalement", s.getDateSignalement() != null ? s.getDateSignalement().toString() : null);
+                data.put("statut", s.getStatut());
+                data.put("surfaceM2", s.getSurfaceM2());
+                data.put("budget", s.getBudget());
+                data.put("entreprise", s.getEntreprise());
+                data.put("id_user", s.getUtilisateur() != null ? s.getUtilisateur().getId() : null);
+                db.collection("signalements").document(String.valueOf(s.getIdSignalement())).set(data);
+                count++;
+            } catch (Exception e) {
+                log.warn("Erreur lors de l'export du signalement {}: {}", s.getIdSignalement(), e.getMessage());
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Récupérer tous les signalements depuis Firestore (collection signalements)
+     */
+    public List<Map<String, Object>> getAllSignalementsFromFirestore() {
+        Firestore db = getFirestore();
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        try {
+            ApiFuture<QuerySnapshot> future = db.collection("signalements").get();
+            List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+            for (QueryDocumentSnapshot doc : docs) {
+                Map<String, Object> data = doc.getData();
+                data.put("id", doc.getId());
+                result.add(data);
+            }
+        } catch (Exception e) {
+            log.warn("Erreur lors de la récupération des signalements Firestore: {}", e.getMessage());
+        }
+        return result;
     }
 }

@@ -8,6 +8,7 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [role, setRole] = useState("user");
   const { profile, login } = useProfile();
   const navigate = useNavigate();
 
@@ -25,16 +26,22 @@ export default function Auth() {
     try {
       if (isLogin) {
         const user = await loginApi(email, password);
-        // Sauvegarde du token JWT après login
         if (user.token) localStorage.setItem("token", user.token);
-        login(user.role || "utilisateur");
+        // Correction : bien distinguer le rôle manager
+        if (user.role && user.role.toLowerCase() === "manager") {
+          login("manager");
+        } else {
+          login("utilisateur");
+        }
         navigate("/dashboard");
       } else {
-        const user = await registerApi(email, password);
-        // Sauvegarde du token JWT après inscription
+        const user = await registerApi(email, password, role);
         if (user.token) localStorage.setItem("token", user.token);
-        login(user.role || "utilisateur");
-        alert("🎉 Inscription réussie !");
+        if (user.role && user.role.toLowerCase() === "manager") {
+          login("manager");
+        } else {
+          login("utilisateur");
+        }
         navigate("/dashboard");
       }
     } catch (err) {
@@ -122,6 +129,20 @@ export default function Auth() {
               </div>
             )}
             
+            {!isLogin && (
+              <div className="form-group">
+                <label className="form-label">
+                  <span className="label-icon">👤</span>
+                  Rôle
+                </label>
+                <div className="input-wrapper">
+                  <select value={role} onChange={e => setRole(e.target.value)} className="auth-input">
+                    <option value="user">Utilisateur</option>
+                    <option value="manager">Manager</option>
+                  </select>
+                </div>
+              </div>
+            )}
             <button type="submit" className="auth-submit-btn">
               {isLogin ? "→ Se connecter" : "🎉 S'inscrire"}
             </button>
