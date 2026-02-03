@@ -96,10 +96,9 @@ export async function getUsersApi(token) {
   if (!token) {
     throw new Error("Token d'authentification manquant. Veuillez vous reconnecter.");
   }
-  // Nettoyage du token : ne garder que la première partie si concaténé
-  const cleanToken = token.split(" ")[0].split(".").length === 3 ? token.split(" ")[0] : token;
+  
   const headers = { 
-    "Authorization": `Bearer ${cleanToken}`,
+    "Authorization": `Bearer ${token}`,
     "Content-Type": "application/json"
   };
   
@@ -267,13 +266,8 @@ export async function updateSignalementStatusApi(signalementId, newStatus, token
 }
 
 // Synchronisation Firebase (Manager)
-
 export async function syncSignalementsToFirebase(token) {
-  if (!token) {
-    throw new Error("Token d'authentification manquant");
-  }
-  const cleanToken = token.split(" ")[0].split(".").length === 3 ? token.split(" ")[0] : token;
-  const headers = { "Authorization": `Bearer ${cleanToken}` };
+  const headers = token ? { "Authorization": `Bearer ${token}` } : {};
   let res;
   try {
     res = await fetch(`${API_URL}/firebase/signalements/sync`, {
@@ -290,13 +284,8 @@ export async function syncSignalementsToFirebase(token) {
   return await res.json();
 }
 
-
 export async function getSignalementsFromFirebase(token) {
-  if (!token) {
-    throw new Error("Token d'authentification manquant");
-  }
-  const cleanToken = token.split(" ")[0].split(".").length === 3 ? token.split(" ")[0] : token;
-  const headers = { "Authorization": `Bearer ${cleanToken}` };
+  const headers = token ? { "Authorization": `Bearer ${token}` } : {};
   let res;
   try {
     res = await fetch(`${API_URL}/firebase/signalements`, { headers });
