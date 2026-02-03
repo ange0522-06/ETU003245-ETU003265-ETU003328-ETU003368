@@ -1,7 +1,7 @@
 // src/api.js
 // Services d'intégration API pour le frontend
 
-const API_URL = "http://localhost:8080/api"; // À adapter selon le backend
+const API_URL = "http://localhost:8080/api";
 
 export async function loginApi(email, password) {
   const res = await fetch(`${API_URL}/auth/login`, {
@@ -61,9 +61,7 @@ export async function getSignalementsApi(token) {
   }
   
   const data = await res.json();
-  console.log("Signalements reçus du backend:", data);
   
-  // mapping des champs backend -> frontend
   return Array.isArray(data) ? data.map(s => ({
     id: s.idSignalement || s.id,
     status: s.statut || s.status,
@@ -95,8 +93,6 @@ export async function getStatsApi(token) {
 
 // Récupérer la liste des utilisateurs (Manager)
 export async function getUsersApi(token) {
-  console.log("getUsersApi appelé avec token:", token ? "Présent" : "Absent");
-  
   if (!token) {
     throw new Error("Token d'authentification manquant. Veuillez vous reconnecter.");
   }
@@ -106,28 +102,16 @@ export async function getUsersApi(token) {
     "Content-Type": "application/json"
   };
   
-  console.log("Envoi requête à:", `${API_URL}/users`);
-  
   try {
     const res = await fetch(`${API_URL}/users`, { headers });
     
-    console.log("Réponse getUsersApi - Status:", res.status, "OK:", res.ok);
-    
     if (res.status === 403) {
-      // Erreur d'autorisation spécifique
       const errorText = await res.text();
-      console.error("Accès refusé (403). Détails:", errorText);
-      
       let errorMessage = "Accès refusé. ";
       
       try {
         const errorData = JSON.parse(errorText);
         errorMessage += errorData.message || "Vous n'avez pas les permissions nécessaires.";
-        
-        // Vérifier si c'est un problème de rôle
-        if (errorData.error && errorData.error.includes("role")) {
-          errorMessage += " Seuls les managers peuvent accéder à cette fonctionnalité.";
-        }
       } catch {
         errorMessage += "Vérifiez que vous êtes connecté en tant que manager.";
       }
@@ -137,17 +121,10 @@ export async function getUsersApi(token) {
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("Autre erreur getUsersApi:", {
-        status: res.status,
-        statusText: res.statusText,
-        errorText: errorText
-      });
-      
       throw new Error(`Erreur serveur (${res.status}): ${errorText || res.statusText}`);
     }
     
     const data = await res.json();
-    console.log("Utilisateurs reçus du backend:", data);
     
     // Normalisation des données
     if (Array.isArray(data)) {
@@ -167,7 +144,6 @@ export async function getUsersApi(token) {
     return [];
     
   } catch (error) {
-    console.error("Erreur dans getUsersApi:", error);
     throw error;
   }
 }
@@ -178,14 +154,12 @@ export async function checkManagerExists() {
     const res = await fetch(`${API_URL}/auth/has-manager`);
     
     if (!res.ok) {
-      console.warn("Erreur lors de la vérification du manager, utilisation de la valeur par défaut");
-      return { hasManager: true }; // Par défaut, on assume qu'un manager existe
+      return { hasManager: true };
     }
     
     return await res.json();
   } catch (error) {
-    console.error("Erreur checkManagerExists:", error);
-    return { hasManager: true }; // En cas d'erreur, on assume qu'un manager existe
+    return { hasManager: true };
   }
 }
 
@@ -215,8 +189,6 @@ export async function blockUserApi(userId, token) {
 
 // Débloquer un utilisateur
 export async function unblockUserApi(userId, token) {
-  console.log("unblockUserApi appelé pour userId:", userId);
-  
   if (!token) {
     throw new Error("Token d'authentification manquant");
   }
@@ -232,25 +204,14 @@ export async function unblockUserApi(userId, token) {
       headers
     });
     
-    console.log("Réponse unblockUserApi - Status:", res.status);
-    
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("Erreur détaillée unblockUserApi:", {
-        status: res.status,
-        statusText: res.statusText,
-        errorText: errorText
-      });
-      
       throw new Error(`Erreur ${res.status} lors du déblocage: ${errorText || res.statusText}`);
     }
     
-    const data = await res.json();
-    console.log("Réponse unblockUserApi:", data);
-    return data;
+    return await res.json();
     
   } catch (error) {
-    console.error("Erreur dans unblockUserApi:", error);
     throw error;
   }
 }
@@ -307,20 +268,34 @@ export async function updateSignalementStatusApi(signalementId, newStatus, token
 // Synchronisation Firebase (Manager)
 export async function syncSignalementsToFirebase(token) {
   const headers = token ? { "Authorization": `Bearer ${token}` } : {};
-  const res = await fetch(`${API_URL}/firebase/signalements/sync`, {
-    method: "POST",
-    headers
-  });
-  if (!res.ok) throw new Error("Erreur lors de la synchronisation vers Firebase");
+  let res;
+  try {
+    res = await fetch(`${API_URL}/firebase/signalements/sync`, {
+      method: "POST",
+      headers
+    });
+  } catch (e) {
+    throw new Error("Impossible de joindre le backend pour la synchronisation: " + e.message);
+  }
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Erreur ${res.status} lors de la synchronisation vers Firebase${txt ? ': ' + txt : ''}`);
+  }
   return await res.json();
 }
 
 export async function getSignalementsFromFirebase(token) {
   const headers = token ? { "Authorization": `Bearer ${token}` } : {};
-  const res = await fetch(`${API_URL}/firebase/signalements`, {
-    headers
-  });
-  if (!res.ok) throw new Error("Erreur lors de la récupération depuis Firebase");
+  let res;
+  try {
+    res = await fetch(`${API_URL}/firebase/signalements`, { headers });
+  } catch (e) {
+    throw new Error("Impossible de joindre le backend pour récupérer depuis Firebase: " + e.message);
+  }
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Erreur ${res.status} lors de la récupération depuis Firebase${txt ? ': ' + txt : ''}`);
+  }
   return await res.json();
 }
 
@@ -365,43 +340,16 @@ export async function testAuthAndRole(token) {
   }
 }
 
-// Tester la connexion au backend
-export async function testBackendConnection() {
-  try {
-    const res = await fetch(`${API_URL}/health`);
-    return {
-      connected: res.ok,
-      status: res.status,
-      statusText: res.statusText
-    };
-  } catch (error) {
-    return {
-      connected: false,
-      error: error.message
-    };
-  }
-}
-
-// Obtenir les informations de l'utilisateur connecté
-export async function getCurrentUserApi(token) {
-  if (!token) {
-    return null;
-  }
-  
-  try {
-    const response = await fetch(`${API_URL}/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      return await response.json();
-    }
-    return null;
-  } catch (error) {
-    console.error("Erreur getCurrentUserApi:", error);
-    return null;
-  }
+// Mettre à jour un signalement (surface, budget, entreprise, statut, ...)
+export async function updateSignalementApi(signalementId, updates, token) {
+  const res = await fetch(`${API_URL}/signalements/${signalementId}`, {
+    method: "PUT",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(updates)
+  });
+  if (!res.ok) throw new Error("Erreur lors de la mise à jour du signalement");
+  return await res.json();
 }

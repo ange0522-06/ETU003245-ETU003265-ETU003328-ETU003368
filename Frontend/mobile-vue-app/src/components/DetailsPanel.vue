@@ -9,10 +9,11 @@
         <h4>{{ point.titre || 'Travaux routier' }}</h4>
         <span :class="getStatusClass(point.status)">{{ point.status }}</span>
       </div>
-
       <div class="detail-grid">
         <div class="detail-item">
           <label>Date :</label>
+
+          
           <span>{{ point.date || '-' }}</span>
         </div>
         <div class="detail-item">

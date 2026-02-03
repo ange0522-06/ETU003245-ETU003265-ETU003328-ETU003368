@@ -148,7 +148,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -304,21 +304,23 @@ const submitReport = async () => {
   try {
     const reportData = {
       ...newReport.value,
-      id: Date.now().toString(),
       status: 'nouveau',
       date: new Date().toISOString().split('T')[0],
       userId: currentUser.value.id,
       userName: currentUser.value.name
     };
 
-    // Add to local points array (in real app, this would be sent to backend)
-    points.value.unshift(reportData);
+    // Envoyer le signalement vers Firebase
+    const savedReport = await apiService.addSignalementToFirebase(reportData);
+    
+    // Le signalement sera automatiquement ajouté via l'écoute temps réel
+    console.log('✅ Signalement créé:', savedReport.id);
 
     closeReportModal();
     reportMode.value = false;
 
     // Show success message
-    alert('Signalement envoyé avec succès !');
+    alert('Signalement envoyé avec succès ! Il sera visible par le Manager après synchronisation.');
 
   } catch (err) {
     console.error('Error submitting report:', err);
@@ -328,24 +330,57 @@ const submitReport = async () => {
   }
 };
 
-const deletePoint = (pointId) => {
-  const index = points.value.findIndex(p => p.id === pointId);
-  if (index > -1) {
-    points.value.splice(index, 1);
+const deletePoint = async (pointId) => {
+  try {
+    // Supprimer de Firebase
+    await apiService.deleteSignalementFromFirebase(String(pointId));
+    
+    // Le point sera automatiquement supprimé via l'écoute temps réel
     if (selectedPoint.value && selectedPoint.value.id === pointId) {
       selectedPoint.value = null;
     }
+    console.log('✅ Signalement supprimé:', pointId);
+  } catch (err) {
+    console.error('Erreur suppression:', err);
+    alert('Erreur lors de la suppression');
   }
 };
 
+// Variable pour stocker la fonction de désabonnement Firebase
+let unsubscribeFirebase = null;
+
 onMounted(async () => {
   try {
-    const data = await apiService.getReports();
-    points.value = data;
-    loading.value = false;
+    // Écouter les signalements depuis Firebase en temps réel
+    unsubscribeFirebase = apiService.subscribeToSignalements((signalements) => {
+      points.value = signalements;
+      loading.value = false;
+      console.log('📍 Points mis à jour depuis Firebase:', signalements.length);
+    });
+
+    // Fallback: si pas de données Firebase après 5s, utiliser les données mock
+    setTimeout(() => {
+      if (loading.value && points.value.length === 0) {
+        console.log('⚠️ Fallback vers données mock');
+        points.value = apiService.getMockReports();
+        loading.value = false;
+      }
+    }, 5000);
+
   } catch (err) {
-    error.value = 'Erreur lors du chargement des données';
+    console.error('Erreur chargement Firebase:', err);
+    error.value = 'Erreur lors du chargement des données Firebase';
+    // Fallback vers données mock
+    points.value = apiService.getMockReports();
     loading.value = false;
+  }
+});
+
+// Nettoyage de l'abonnement Firebase quand le composant est détruit
+onUnmounted(() => {
+  if (unsubscribeFirebase) {
+    unsubscribeFirebase();
+    console.log('🔌 Désabonnement Firebase');
   }
 });
 </script>

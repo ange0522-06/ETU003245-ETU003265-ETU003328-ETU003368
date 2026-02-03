@@ -41,6 +41,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api/stats",
                                 "/api/auth/firebase/**",
+                                "/api/firebase/**",
                                 "/api/test/**",
                                 "/api/admin/users/**",
                                  "/swagger-ui/**",
