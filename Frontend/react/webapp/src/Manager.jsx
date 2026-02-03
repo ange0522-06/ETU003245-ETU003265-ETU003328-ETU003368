@@ -1,26 +1,21 @@
 import { useState, useEffect } from "react";
-import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, registerApi } from "./api";
+import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, updateSignalementApi } from "./api";
 import { useProfile } from "./ProfileContext";
-import { useNavigate } from "react-router-dom"; // Ajoutez cette importation
+import { useNavigate } from "react-router-dom";
 
 export default function Manager() {
   const { profile } = useProfile();
-  const navigate = useNavigate(); // Ajoutez ceci
+  const navigate = useNavigate();
   const [signalements, setSignalements] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [syncing, setSyncing] = useState(false);
   const token = localStorage.getItem("token");
 
-  // États pour la création d'utilisateur
-  const [showCreateUserForm, setShowCreateUserForm] = useState(false);
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserPassword, setNewUserPassword] = useState("");
-  const [newUserConfirmPassword, setNewUserConfirmPassword] = useState("");
-  const [newUserRole, setNewUserRole] = useState("user");
-  const [createUserError, setCreateUserError] = useState("");
-  const [createUserSuccess, setCreateUserSuccess] = useState("");
-  const [creatingUser, setCreatingUser] = useState(false);
+  // États pour l'édition
+  const [editingId, setEditingId] = useState(null);
+  const [editFields, setEditFields] = useState({ surface: '', budget: '', entreprise: '', status: '' });
 
   useEffect(() => {
     async function fetchData() {
@@ -36,8 +31,7 @@ export default function Manager() {
           setUsers(us);
         } catch (usersError) {
           console.warn("Erreur lors de la récupération des utilisateurs:", usersError.message);
-          setUsers([]); // Initialiser avec un tableau vide
-          // Ne pas bloquer toute la page pour cette erreur
+          setUsers([]);
         }
       } catch (err) {
         setError(err.message || "Erreur lors du chargement des données");
@@ -48,23 +42,45 @@ export default function Manager() {
     fetchData();
   }, [token]);
 
-  // Synchronisation Firebase
+  // Synchronisation Firebase - Exporter vers Firebase
   const handleSyncToFirebase = async () => {
+    setSyncing(true);
     try {
-      await syncSignalementsToFirebase(token);
-      alert("✅ Signalements exportés vers Firebase !");
+      const result = await syncSignalementsToFirebase(token);
+      setError("");
+      alert(`✅ ${result.exportedCount || 'Tous les'} signalements exportés vers Firebase !`);
     } catch (err) {
-      alert(err.message || "Erreur lors de la synchronisation vers Firebase");
+      setError(err.message || "Erreur lors de la synchronisation vers Firebase");
+    } finally {
+      setSyncing(false);
     }
   };
 
+  // Synchronisation Firebase - Récupérer depuis Firebase
   const handleGetFromFirebase = async () => {
+    setSyncing(true);
     try {
       const sig = await getSignalementsFromFirebase(token);
-      setSignalements(sig);
-      alert("✅ Signalements récupérés depuis Firebase !");
+      const mapped = sig.map(s => ({
+        id: s.idSignalement || s.id,
+        status: s.statut || s.status,
+        date: s.dateSignalement ? s.dateSignalement.split('T')[0] : s.date || '',
+        surface: s.surfaceM2 || s.surface,
+        budget: s.budget,
+        entreprise: s.entreprise,
+        titre: s.titre,
+        latitude: s.latitude,
+        longitude: s.longitude,
+        description: s.description,
+        id_user: s.id_user
+      }));
+      setSignalements(mapped);
+      setError("");
+      alert(`✅ ${mapped.length} signalements récupérés depuis Firebase !`);
     } catch (err) {
-      alert(err.message || "Erreur lors de la récupération depuis Firebase");
+      setError(err.message || "Erreur lors de la récupération depuis Firebase");
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -79,12 +95,14 @@ export default function Manager() {
     }
   };
 
-  const [editingId, setEditingId] = useState(null);
-  const [editFields, setEditFields] = useState({ surface: '', budget: '', entreprise: '', status: '' });
-
   const startEdit = (s) => {
     setEditingId(s.id);
-    setEditFields({ surface: s.surface || '', budget: s.budget || '', entreprise: s.entreprise || '', status: s.status || '' });
+    setEditFields({ 
+      surface: s.surface || '', 
+      budget: s.budget || '', 
+      entreprise: s.entreprise || '', 
+      status: s.status || '' 
+    });
   };
 
   const cancelEdit = () => {
@@ -121,7 +139,7 @@ export default function Manager() {
     try {
       await unblockUserApi(id, token);
       setUsers(users.map(u =>
-        u.id === id ? { ...u, blocked: false } : u
+        u.id === id ? { ...u, blocked: false, field_attempts: 0, locked: false } : u
       ));
       alert("✅ Utilisateur débloqué !");
     } catch (err) {
@@ -133,7 +151,7 @@ export default function Manager() {
     try {
       await blockUserApi(id, token);
       setUsers(users.map(u =>
-        u.id === id ? { ...u, blocked: true } : u
+        u.id === id ? { ...u, blocked: true, locked: true } : u
       ));
       alert("⛔ Utilisateur bloqué !");
     } catch (err) {
@@ -145,8 +163,6 @@ export default function Manager() {
   const handleNavigateToCreateUser = () => {
     navigate("/auth", { state: { fromManager: true } });
   };
-
-  // Supprimez la fonction handleCreateUser car on utilise maintenant Auth.jsx
 
   if (profile !== "manager") {
     return (
@@ -173,8 +189,6 @@ export default function Manager() {
     </div>
   );
   
-  // Ne bloque plus l'affichage de la page : afficher une alerte non bloquante
-  
   return (
     <div className="manager-page">
       <div className="page-header">
@@ -187,17 +201,72 @@ export default function Manager() {
       </div>
 
       <div className="content-container">
+        {error && (
+          <div className="error-alert" style={{marginBottom: 20}}>
+            <span style={{color:'#ff6b6b', fontSize: '2rem'}}>⚠️</span>
+            <h3 style={{color:'#ff6b6b', margin: '10px 0'}}>Erreur lors de la récupération des utilisateurs</h3>
+            <p style={{color:'#a0a0e0'}}>{error}</p>
+            <div style={{marginTop: 8}}>
+              <button onClick={() => window.location.reload()} style={{padding: '6px 12px'}}>Réessayer</button>
+            </div>
+          </div>
+        )}
+        
         {/* Boutons d'action en haut */}
         <div style={{display: 'flex', gap: '16px', marginBottom: 24, flexWrap: 'wrap'}}>
           {profile === "manager" && (
             <>
-              <button onClick={handleSyncToFirebase} style={{background: '#4caf50', color: 'white', padding: '10px 18px', borderRadius: 6, border: 'none', fontWeight: 600, cursor: 'pointer'}}>
-                <span>⬆️</span> Synchroniser vers Firebase
+              <button 
+                onClick={handleSyncToFirebase} 
+                disabled={syncing}
+                style={{
+                  background: syncing ? '#9e9e9e' : '#4caf50', 
+                  color: 'white', 
+                  padding: '10px 18px', 
+                  borderRadius: 6, 
+                  border: 'none', 
+                  fontWeight: 600, 
+                  cursor: syncing ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {syncing ? '⏳ Synchronisation...' : '⬆️ Synchroniser vers Firebase'}
               </button>
-              <button onClick={handleGetFromFirebase} style={{background: '#2196f3', color: 'white', padding: '10px 18px', borderRadius: 6, border: 'none', fontWeight: 600, cursor: 'pointer'}}>
-                <span>⬇️</span> Récupérer depuis Firebase
+              <button 
+                onClick={handleGetFromFirebase} 
+                disabled={syncing}
+                style={{
+                  background: syncing ? '#9e9e9e' : '#2196f3', 
+                  color: 'white', 
+                  padding: '10px 18px', 
+                  borderRadius: 6, 
+                  border: 'none', 
+                  fontWeight: 600, 
+                  cursor: syncing ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {syncing ? '⏳ Chargement...' : '⬇️ Récupérer depuis Firebase'}
               </button>
-              <button onClick={handleNavigateToCreateUser} style={{background: '#9c27b0', color: 'white', padding: '10px 18px', borderRadius: 6, border: 'none', fontWeight: 600, cursor: 'pointer'}}>
+              <button 
+                onClick={handleNavigateToCreateUser}
+                style={{
+                  background: '#9c27b0', 
+                  color: 'white', 
+                  padding: '10px 18px', 
+                  borderRadius: 6, 
+                  border: 'none', 
+                  fontWeight: 600, 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
                 <span>➕</span> Créer un utilisateur
               </button>
             </>
@@ -293,8 +362,18 @@ export default function Manager() {
                           <option value="en cours">🔄 En cours</option>
                           <option value="termine">✅ Terminé</option>
                         </select>
-                        <button onClick={() => saveEdit(s.id)} style={{padding: '6px 10px', background: '#4caf50', color: 'white', borderRadius: 6}}>Sauvegarder</button>
-                        <button onClick={cancelEdit} style={{padding: '6px 10px', background: '#e0e0e0', borderRadius: 6}}>Annuler</button>
+                        <button 
+                          onClick={() => saveEdit(s.id)} 
+                          style={{padding: '6px 10px', background: '#4caf50', color: 'white', borderRadius: 6, border: 'none', cursor: 'pointer'}}
+                        >
+                          Sauvegarder
+                        </button>
+                        <button 
+                          onClick={cancelEdit} 
+                          style={{padding: '6px 10px', background: '#e0e0e0', borderRadius: 6, border: 'none', cursor: 'pointer'}}
+                        >
+                          Annuler
+                        </button>
                       </div>
                     ) : (
                       <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
@@ -314,7 +393,12 @@ export default function Manager() {
                           <option value="en cours">🔄 En cours</option>
                           <option value="termine">✅ Terminé</option>
                         </select>
-                        <button onClick={() => startEdit(s)} style={{padding: '6px 10px'}}>✏️ Edit</button>
+                        <button 
+                          onClick={() => startEdit(s)} 
+                          style={{padding: '6px 10px', background: '#ffc107', color: 'white', borderRadius: 6, border: 'none', cursor: 'pointer'}}
+                        >
+                          ✏️ Modifier
+                        </button>
                       </div>
                     )}
                   </td>
@@ -329,7 +413,7 @@ export default function Manager() {
           👥 Gestion des utilisateurs
         </h2>
         
-        <div style={{overflowX: 'auto'}}>
+        <div style={{overflowX: 'auto', marginBottom: '30px'}}>
           <table>
             <thead>
               <tr>
@@ -340,47 +424,73 @@ export default function Manager() {
               </tr>
             </thead>
             <tbody>
-              {users.map(u => (
-                <tr key={u.id}>
-                  <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                      <span>{u.email.includes('manager') ? '👨‍💼' : '👤'}</span>
-                      {u.email}
-                    </div>
-                  </td>
-                  <td>
-                    <span style={{
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      fontSize: '0.9rem',
-                      fontWeight: '500',
-                      background: u.blocked ? 'rgba(255, 107, 107, 0.2)' : 'rgba(76, 175, 80, 0.2)',
-                      color: u.blocked ? '#ff6b6b' : '#4caf50'
-                    }}>
-                      {u.blocked ? "⛔ Bloqué" : "✅ Actif"}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-                      <span>⏰</span>
-                      {u.lastLogin}
-                    </div>
-                  </td>
-                  <td>
-                    {u.blocked ? (
-                      <button onClick={() => unblockUser(u.id)} style={{background: 'rgba(76, 175, 80, 0.2)', color: '#4caf50'}}>
-                        <span>✅</span>
-                        Débloquer
-                      </button>
-                    ) : (
-                      <button onClick={() => blockUser(u.id)} style={{background: 'rgba(255, 107, 107, 0.2)', color: '#ff6b6b'}}>
-                        <span>⛔</span>
-                        Bloquer
-                      </button>
-                    )}
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan="4" style={{textAlign: 'center', padding: '20px'}}>
+                    Aucun utilisateur trouvé ou erreur de chargement
                   </td>
                 </tr>
-              ))}
+              ) : (
+                users.map(u => (
+                  <tr key={u.id}>
+                    <td>
+                      <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                        <span>{u.role === 'manager' ? '👨‍💼' : '👤'}</span>
+                        {u.email}
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.9rem',
+                        fontWeight: '500',
+                        background: u.blocked ? 'rgba(255, 107, 107, 0.2)' : 'rgba(76, 175, 80, 0.2)',
+                        color: u.blocked ? '#ff6b6b' : '#4caf50'
+                      }}>
+                        {u.blocked ? "⛔ Bloqué" : "✅ Actif"}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                        <span>⏰</span>
+                        {u.lastLogin}
+                      </div>
+                    </td>
+                    <td>
+                      {u.blocked ? (
+                        <button 
+                          onClick={() => unblockUser(u.id)} 
+                          style={{
+                            background: 'rgba(76, 175, 80, 0.2)', 
+                            color: '#4caf50',
+                            border: '1px solid #4caf50',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <span>✅</span> Débloquer
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => blockUser(u.id)} 
+                          style={{
+                            background: 'rgba(255, 107, 107, 0.2)', 
+                            color: '#ff6b6b',
+                            border: '1px solid #ff6b6b',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <span>⛔</span> Bloquer
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
