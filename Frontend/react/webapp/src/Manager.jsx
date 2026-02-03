@@ -11,6 +11,7 @@ export default function Manager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const token = localStorage.getItem("token");
 
   // États pour l'édition
@@ -42,15 +43,48 @@ export default function Manager() {
     fetchData();
   }, [token]);
 
+  // Auto-clear success message after 5 seconds
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
   // Synchronisation Firebase - Exporter vers Firebase
   const handleSyncToFirebase = async () => {
+    if (!token) {
+      setError("Token d'authentification manquant. Veuillez vous reconnecter.");
+      return;
+    }
+
     setSyncing(true);
+    setError("");
+    setSuccessMessage("");
+    
     try {
+      console.log("🔄 Début de la synchronisation vers Firebase...");
       const result = await syncSignalementsToFirebase(token);
-      setError("");
-      alert(`✅ ${result.exportedCount || 'Tous les'} signalements exportés vers Firebase !`);
+      
+      console.log("✅ Résultat de la synchronisation:", result);
+      
+      const count = result.exportedCount || result.totalSignalements || 0;
+      setSuccessMessage(`✅ ${count} signalement(s) exporté(s) vers Firebase avec succès !`);
+      
     } catch (err) {
-      setError(err.message || "Erreur lors de la synchronisation vers Firebase");
+      console.error("❌ Erreur lors de la synchronisation:", err);
+      
+      // Gestion des erreurs spécifiques
+      if (err.message.includes("403")) {
+        setError("❌ Accès refusé. Vérifiez que vous êtes bien connecté en tant que manager.");
+      } else if (err.message.includes("401")) {
+        setError("❌ Session expirée. Veuillez vous reconnecter.");
+        setTimeout(() => navigate("/auth"), 2000);
+      } else if (err.message.includes("SERVICE_UNAVAILABLE") || err.message.includes("503")) {
+        setError("❌ Firebase Firestore n'est pas disponible. Vérifiez la configuration.");
+      } else {
+        setError(`❌ ${err.message || "Erreur lors de la synchronisation vers Firebase"}`);
+      }
     } finally {
       setSyncing(false);
     }
@@ -58,9 +92,21 @@ export default function Manager() {
 
   // Synchronisation Firebase - Récupérer depuis Firebase
   const handleGetFromFirebase = async () => {
+    if (!token) {
+      setError("Token d'authentification manquant. Veuillez vous reconnecter.");
+      return;
+    }
+
     setSyncing(true);
+    setError("");
+    setSuccessMessage("");
+    
     try {
+      console.log("📥 Récupération des signalements depuis Firebase...");
       const sig = await getSignalementsFromFirebase(token);
+      
+      console.log("✅ Signalements récupérés:", sig);
+      
       const mapped = sig.map(s => ({
         id: s.idSignalement || s.id,
         status: s.statut || s.status,
@@ -74,11 +120,24 @@ export default function Manager() {
         description: s.description,
         id_user: s.id_user
       }));
+      
       setSignalements(mapped);
-      setError("");
-      alert(`✅ ${mapped.length} signalements récupérés depuis Firebase !`);
+      setSuccessMessage(`✅ ${mapped.length} signalement(s) récupéré(s) depuis Firebase !`);
+      
     } catch (err) {
-      setError(err.message || "Erreur lors de la récupération depuis Firebase");
+      console.error("❌ Erreur lors de la récupération:", err);
+      
+      // Gestion des erreurs spécifiques
+      if (err.message.includes("403")) {
+        setError("❌ Accès refusé. Vérifiez que vous êtes bien connecté en tant que manager.");
+      } else if (err.message.includes("401")) {
+        setError("❌ Session expirée. Veuillez vous reconnecter.");
+        setTimeout(() => navigate("/auth"), 2000);
+      } else if (err.message.includes("SERVICE_UNAVAILABLE") || err.message.includes("503")) {
+        setError("❌ Firebase Firestore n'est pas disponible. Vérifiez la configuration.");
+      } else {
+        setError(`❌ ${err.message || "Erreur lors de la récupération depuis Firebase"}`);
+      }
     } finally {
       setSyncing(false);
     }
@@ -90,8 +149,9 @@ export default function Manager() {
       setSignalements(signalements.map(s =>
         s.id === id ? { ...s, status: newStatus } : s
       ));
+      setSuccessMessage("✅ Statut mis à jour avec succès");
     } catch (err) {
-      alert(err.message || "Erreur lors de la modification du statut");
+      setError(err.message || "Erreur lors de la modification du statut");
     }
   };
 
@@ -129,9 +189,9 @@ export default function Manager() {
         } : s
       ));
       setEditingId(null);
-      alert('✅ Signalement mis à jour et synchronisé');
+      setSuccessMessage('✅ Signalement mis à jour avec succès');
     } catch (err) {
-      alert(err.message || 'Erreur lors de la mise à jour du signalement');
+      setError(err.message || 'Erreur lors de la mise à jour du signalement');
     }
   };
 
@@ -141,9 +201,9 @@ export default function Manager() {
       setUsers(users.map(u =>
         u.id === id ? { ...u, blocked: false, field_attempts: 0, locked: false } : u
       ));
-      alert("✅ Utilisateur débloqué !");
+      setSuccessMessage("✅ Utilisateur débloqué avec succès");
     } catch (err) {
-      alert(err.message || "Erreur lors du déblocage");
+      setError(err.message || "Erreur lors du déblocage");
     }
   };
 
@@ -153,9 +213,9 @@ export default function Manager() {
       setUsers(users.map(u =>
         u.id === id ? { ...u, blocked: true, locked: true } : u
       ));
-      alert("⛔ Utilisateur bloqué !");
+      setSuccessMessage("✅ Utilisateur bloqué avec succès");
     } catch (err) {
-      alert(err.message || "Erreur lors du blocage");
+      setError(err.message || "Erreur lors du blocage");
     }
   };
 
@@ -202,208 +262,261 @@ export default function Manager() {
 
       <div className="content-container">
         {error && (
-          <div className="error-alert" style={{marginBottom: 20}}>
+          <div className="error-alert" style={{marginBottom: 20, padding: '15px', background: 'rgba(255, 107, 107, 0.1)', border: '1px solid #ff6b6b', borderRadius: '8px'}}>
             <span style={{color:'#ff6b6b', fontSize: '2rem'}}>⚠️</span>
-            <h3 style={{color:'#ff6b6b', margin: '10px 0'}}>Erreur lors de la récupération des utilisateurs</h3>
-            <p style={{color:'#a0a0e0'}}>{error}</p>
-            <div style={{marginTop: 8}}>
-              <button onClick={() => window.location.reload()} style={{padding: '6px 12px'}}>Réessayer</button>
-            </div>
+            <p style={{color:'#ff6b6b', margin: '10px 0', fontWeight: '500'}}>{error}</p>
+            <button 
+              onClick={() => setError("")}
+              style={{
+                marginTop: '10px',
+                padding: '8px 16px',
+                background: '#ff6b6b',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              Fermer
+            </button>
           </div>
         )}
-        
-        {/* Boutons d'action en haut */}
-        <div style={{display: 'flex', gap: '16px', marginBottom: 24, flexWrap: 'wrap'}}>
-          {profile === "manager" && (
-            <>
-              <button 
-                onClick={handleSyncToFirebase} 
-                disabled={syncing}
-                style={{
-                  background: syncing ? '#9e9e9e' : '#4caf50', 
-                  color: 'white', 
-                  padding: '10px 18px', 
-                  borderRadius: 6, 
-                  border: 'none', 
-                  fontWeight: 600, 
-                  cursor: syncing ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                {syncing ? '⏳ Synchronisation...' : '⬆️ Synchroniser vers Firebase'}
-              </button>
-              <button 
-                onClick={handleGetFromFirebase} 
-                disabled={syncing}
-                style={{
-                  background: syncing ? '#9e9e9e' : '#2196f3', 
-                  color: 'white', 
-                  padding: '10px 18px', 
-                  borderRadius: 6, 
-                  border: 'none', 
-                  fontWeight: 600, 
-                  cursor: syncing ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                {syncing ? '⏳ Chargement...' : '⬇️ Récupérer depuis Firebase'}
-              </button>
-              <button 
-                onClick={handleNavigateToCreateUser}
-                style={{
-                  background: '#9c27b0', 
-                  color: 'white', 
-                  padding: '10px 18px', 
-                  borderRadius: 6, 
-                  border: 'none', 
-                  fontWeight: 600, 
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <span>➕</span> Créer un utilisateur
-              </button>
-            </>
-          )}
+
+        {successMessage && (
+          <div style={{
+            marginBottom: 20, 
+            padding: '15px', 
+            background: 'rgba(76, 175, 80, 0.1)', 
+            border: '1px solid #4caf50', 
+            borderRadius: '8px',
+            animation: 'slideIn 0.3s ease-out'
+          }}>
+            <p style={{color:'#4caf50', margin: '0', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px'}}>
+              <span>✅</span>
+              {successMessage}
+            </p>
+          </div>
+        )}
+
+        {/* Boutons Firebase */}
+        <div style={{display: 'flex', gap: '15px', marginBottom: '30px', flexWrap: 'wrap'}}>
+          <button
+            onClick={handleSyncToFirebase}
+            disabled={syncing}
+            style={{
+              padding: '12px 20px',
+              background: syncing ? '#ccc' : 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: syncing ? 'not-allowed' : 'pointer',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '1rem',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <span>{syncing ? '⏳' : '⬆️'}</span>
+            {syncing ? 'Synchronisation...' : 'SYNCHRONISER VERS FIREBASE'}
+          </button>
+          
+          <button
+            onClick={handleGetFromFirebase}
+            disabled={syncing}
+            style={{
+              padding: '12px 20px',
+              background: syncing ? '#ccc' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: syncing ? 'not-allowed' : 'pointer',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '1rem',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <span>{syncing ? '⏳' : '⬇️'}</span>
+            {syncing ? 'Récupération...' : 'RÉCUPÉRER DEPUIS FIREBASE'}
+          </button>
+
+          <button
+            onClick={handleNavigateToCreateUser}
+            style={{
+              padding: '12px 20px',
+              background: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '1rem',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <span>➕</span>
+            CRÉER UN UTILISATEUR
+          </button>
         </div>
 
         {/* Gestion des signalements */}
-        <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#2c3e50'}}>
+        <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#2c3e50'}}>
           📋 Gestion des signalements
         </h2>
         
-        <div style={{overflowX: 'auto', marginBottom: '50px'}}>
+        <div style={{overflowX: 'auto', marginBottom: '40px'}}>
           <table>
             <thead>
               <tr>
-                <th>📅 Date</th>
-                <th>🔄 Status</th>
-                <th>📏 Surface (m²)</th>
-                <th>💰 Budget</th>
-                <th>🏢 Entreprise</th>
-                <th>⚙️ Actions</th>
+                <th>📅 DATE</th>
+                <th>📍 STATUS</th>
+                <th>📐 SURFACE (M²)</th>
+                <th>💰 BUDGET</th>
+                <th>🏢 ENTREPRISE</th>
+                <th>🛠️ ACTIONS</th>
               </tr>
             </thead>
             <tbody>
-              {signalements.map(s => (
-                <tr key={s.id}>
-                  <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                      <span>📅</span>
-                      {s.date}
+              {signalements.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{textAlign: 'center', padding: '40px'}}>
+                    <div style={{color: '#7f8c8d'}}>
+                      <span style={{fontSize: '3rem'}}>📭</span>
+                      <p style={{marginTop: '10px'}}>Aucun signalement disponible</p>
                     </div>
                   </td>
-                  <td>
-                    <span style={{
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      fontSize: '0.9rem',
-                      fontWeight: '500',
-                      background: s.status === 'termine' ? 'rgba(76, 175, 80, 0.2)' : 
-                                 s.status === 'en cours' ? 'rgba(255, 193, 7, 0.2)' : 
-                                 'rgba(33, 150, 243, 0.2)',
-                      color: s.status === 'termine' ? '#4caf50' : 
-                             s.status === 'en cours' ? '#ffc107' : '#2196f3'
-                    }}>
-                      {s.status}
-                    </span>
-                  </td>
-                  <td>
-                    {editingId === s.id ? (
-                      <input
-                        value={editFields.surface}
-                        onChange={e => setEditFields({ ...editFields, surface: e.target.value })}
-                        style={{padding: '6px', borderRadius: 6, width: 100}}
-                      />
-                    ) : (
-                      s.surface
-                    )}
-                  </td>
-                  <td>
-                    {editingId === s.id ? (
-                      <input
-                        value={editFields.budget}
-                        onChange={e => setEditFields({ ...editFields, budget: e.target.value })}
-                        style={{padding: '6px', borderRadius: 6, width: 120}}
-                      />
-                    ) : (
-                      <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-                        <span>💰</span>
-                        {s.budget}
-                      </div>
-                    )}
-                  </td>
-                  <td>
-                    {editingId === s.id ? (
-                      <input
-                        value={editFields.entreprise}
-                        onChange={e => setEditFields({ ...editFields, entreprise: e.target.value })}
-                        style={{padding: '6px', borderRadius: 6, width: 160}}
-                      />
-                    ) : (
-                      s.entreprise
-                    )}
-                  </td>
-                  <td>
-                    {editingId === s.id ? (
-                      <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
-                        <select
-                          value={editFields.status}
-                          onChange={e => setEditFields({ ...editFields, status: e.target.value })}
-                          style={{padding: '6px', borderRadius: 6}}
-                        >
-                          <option value="nouveau">🆕 Nouveau</option>
-                          <option value="en cours">🔄 En cours</option>
-                          <option value="termine">✅ Terminé</option>
-                        </select>
-                        <button 
-                          onClick={() => saveEdit(s.id)} 
-                          style={{padding: '6px 10px', background: '#4caf50', color: 'white', borderRadius: 6, border: 'none', cursor: 'pointer'}}
-                        >
-                          Sauvegarder
-                        </button>
-                        <button 
-                          onClick={cancelEdit} 
-                          style={{padding: '6px 10px', background: '#e0e0e0', borderRadius: 6, border: 'none', cursor: 'pointer'}}
-                        >
-                          Annuler
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
-                        <select 
-                          value={s.status} 
-                          onChange={e => changeStatus(s.id, e.target.value)}
-                          style={{
-                            minWidth: '140px',
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            border: '2px solid #ddd',
-                            backgroundColor: 'white',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <option value="nouveau">🆕 Nouveau</option>
-                          <option value="en cours">🔄 En cours</option>
-                          <option value="termine">✅ Terminé</option>
-                        </select>
-                        <button 
-                          onClick={() => startEdit(s)} 
-                          style={{padding: '6px 10px', background: '#ffc107', color: 'white', borderRadius: 6, border: 'none', cursor: 'pointer'}}
-                        >
-                          ✏️ Modifier
-                        </button>
-                      </div>
-                    )}
-                  </td>
                 </tr>
-              ))}
+              ) : (
+                signalements.map(s => (
+                  <tr key={s.id}>
+                    <td>
+                      <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                        <span>📅</span>
+                        {s.date}
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.85rem',
+                        fontWeight: '600',
+                        background: 
+                          s.status === 'termine' ? 'rgba(76, 175, 80, 0.2)' :
+                          s.status === 'en cours' ? 'rgba(255, 193, 7, 0.2)' :
+                          'rgba(33, 150, 243, 0.2)',
+                        color: 
+                          s.status === 'termine' ? '#4caf50' :
+                          s.status === 'en cours' ? '#ffc107' :
+                          '#2196f3'
+                      }}>
+                        {s.status === 'termine' ? '✅ terminé' : s.status === 'en cours' ? '🔄 en cours' : '🆕 nouveau'}
+                      </span>
+                    </td>
+                    <td>
+                      {editingId === s.id ? (
+                        <input
+                          type="number"
+                          value={editFields.surface}
+                          onChange={e => setEditFields({ ...editFields, surface: e.target.value })}
+                          style={{padding: '6px', borderRadius: 6, width: 100}}
+                        />
+                      ) : (
+                        s.surface
+                      )}
+                    </td>
+                    <td>
+                      {editingId === s.id ? (
+                        <input
+                          type="number"
+                          value={editFields.budget}
+                          onChange={e => setEditFields({ ...editFields, budget: e.target.value })}
+                          style={{padding: '6px', borderRadius: 6, width: 120}}
+                        />
+                      ) : (
+                        <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                          <span>💰</span>
+                          {s.budget}
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      {editingId === s.id ? (
+                        <input
+                          value={editFields.entreprise}
+                          onChange={e => setEditFields({ ...editFields, entreprise: e.target.value })}
+                          style={{padding: '6px', borderRadius: 6, width: 160}}
+                        />
+                      ) : (
+                        s.entreprise
+                      )}
+                    </td>
+                    <td>
+                      {editingId === s.id ? (
+                        <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+                          <select
+                            value={editFields.status}
+                            onChange={e => setEditFields({ ...editFields, status: e.target.value })}
+                            style={{padding: '6px', borderRadius: 6}}
+                          >
+                            <option value="nouveau">🆕 Nouveau</option>
+                            <option value="en cours">🔄 En cours</option>
+                            <option value="termine">✅ Terminé</option>
+                          </select>
+                          <button 
+                            onClick={() => saveEdit(s.id)} 
+                            style={{padding: '6px 10px', background: '#4caf50', color: 'white', borderRadius: 6, border: 'none', cursor: 'pointer'}}
+                          >
+                            Sauvegarder
+                          </button>
+                          <button 
+                            onClick={cancelEdit} 
+                            style={{padding: '6px 10px', background: '#e0e0e0', borderRadius: 6, border: 'none', cursor: 'pointer'}}
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+                          <select 
+                            value={s.status} 
+                            onChange={e => changeStatus(s.id, e.target.value)}
+                            style={{
+                              minWidth: '140px',
+                              padding: '8px 12px',
+                              borderRadius: '6px',
+                              border: '2px solid #ddd',
+                              backgroundColor: 'white',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <option value="nouveau">🆕 Nouveau</option>
+                            <option value="en cours">🔄 En cours</option>
+                            <option value="termine">✅ Terminé</option>
+                          </select>
+                          <button 
+                            onClick={() => startEdit(s)} 
+                            style={{padding: '6px 10px', background: '#ffc107', color: 'white', borderRadius: 6, border: 'none', cursor: 'pointer'}}
+                          >
+                            ✏️ Modifier
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -520,6 +633,19 @@ export default function Manager() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }

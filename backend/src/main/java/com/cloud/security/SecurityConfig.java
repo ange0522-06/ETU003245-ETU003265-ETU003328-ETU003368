@@ -32,28 +32,33 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
+                // Endpoints publics (sans authentification)
                 .requestMatchers(
-                                "/api/auth/register",
-                                "/api/auth/login",
-                                "/api/signalements",
-                                "/api/signalements/**",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/api/stats",
-                                "/api/auth/firebase/**",
-                                "/api/firebase/**",
-                                "/api/test/**",
-                                "/api/admin/users/**",
-                                 "/swagger-ui/**",
-                                 "/v3/api-docs/**"
+                    "/api/auth/register",
+                    "/api/auth/login",
+                    "/api/auth/has-manager",
+                    "/api/signalements",
+                    "/api/signalements/**",
+                    "/api/stats",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**"
                 ).permitAll()
+                
+                // Endpoints Firebase - DOIVENT être accessibles avec le rôle MANAGER
+                .requestMatchers("/api/firebase/**").hasAuthority("ROLE_MANAGER")
+                
+                // Endpoints de gestion des utilisateurs - réservés aux MANAGERS
                 .requestMatchers("/api/users/**").hasAuthority("ROLE_MANAGER")
                 .requestMatchers("/api/manager/**").hasAuthority("ROLE_MANAGER")
+                
+                // Endpoints admin
+                .requestMatchers("/api/admin/users/**").hasAuthority("ROLE_MANAGER")
+                
+                // Tous les autres endpoints nécessitent une authentification
                 .anyRequest().authenticated()
             )
-        			.addFilterBefore(jwtFilter,
-        					UsernamePasswordAuthenticationFilter.class)
-        			.cors(Customizer.withDefaults());
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            .cors(Customizer.withDefaults());
 
         return http.build();
     }
@@ -61,7 +66,7 @@ public class SecurityConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOriginPattern("*"); // Autorise toutes les origines (pour les tests)
+        config.addAllowedOriginPattern("*"); // Autorise toutes les origines
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.setAllowCredentials(true);

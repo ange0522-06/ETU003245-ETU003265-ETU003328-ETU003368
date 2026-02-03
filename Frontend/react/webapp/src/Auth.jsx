@@ -200,7 +200,7 @@ export default function Auth() {
             <div className="form-field">
               <label className="field-label">Email</label>
               <div className="input-container">
-                <span className="input-prefix-icon">📧</span>
+                <span className="input-prefix-icon"></span>
                 <input
                   type="email"
                   value={email}
@@ -215,7 +215,7 @@ export default function Auth() {
             <div className="form-field">
               <label className="field-label">Password</label>
               <div className="input-container">
-                <span className="input-prefix-icon">🔒</span>
+                <span className="input-prefix-icon"></span>
                 <input
                   type="password"
                   value={password}
@@ -231,7 +231,7 @@ export default function Auth() {
                 <div className="form-field">
                   <label className="field-label">Confirm Password</label>
                   <div className="input-container">
-                    <span className="input-prefix-icon">🔒</span>
+                    <span className="input-prefix-icon"></span>
                     <input
                       type="password"
                       value={confirm}
