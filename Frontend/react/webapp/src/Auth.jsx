@@ -87,7 +87,11 @@ export default function Auth() {
       if (isLogin) {
         // Connexion normale
         const user = await loginApi(email, password);
-        if (user.token) localStorage.setItem("token", user.token);
+        if (user.token) {
+          // Toujours écraser l'ancien token, ne jamais concaténer
+          localStorage.removeItem("token");
+          localStorage.setItem("token", user.token);
+        }
         if (user.role && user.role.toLowerCase() === "manager") {
           login("manager");
         } else {
@@ -110,7 +114,10 @@ export default function Auth() {
           // Ne pas rediriger, rester sur la page pour créer d'autres utilisateurs
         } else {
           // Si c'est une inscription normale, on connecte l'utilisateur
-          if (user.token) localStorage.setItem("token", user.token);
+          if (user.token) {
+            localStorage.removeItem("token");
+            localStorage.setItem("token", user.token);
+          }
           if (user.role && user.role.toLowerCase() === "manager") {
             login("manager");
           } else {
@@ -319,7 +326,6 @@ export default function Auth() {
                 type="button"
                 style={{
                   background: 'transparent',
-                  border: 'none',
                   color: '#3498db',
                   cursor: 'pointer',
                   fontSize: '0.9rem',
