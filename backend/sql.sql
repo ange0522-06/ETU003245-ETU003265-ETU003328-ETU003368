@@ -76,8 +76,7 @@ CREATE TABLE synchronisation (
 );
 ---------------------Nampiana--------------
 
-INSERT INTO users (email, password, role, locked, failed_attempts)
-VALUES ('manager@email.com', '$2a$10$9dxcPHsi9d7TXsii8jjzHedSLP3XSVt6Un4LEnqx3QW7nbXZFBrlO', 'manager', false, 0);
+INSERT INTO users (email, password, role, locked, failed_attempts) VALUES ('manager@email.com', '1234', 'manager', false, 0);
 
 INSERT INTO signalement (budget, date_signalement, description, entreprise, latitude, longitude, statut, surface_m2, titre, id_user)
 VALUES
@@ -98,3 +97,4 @@ docker compose up -d
 verifier 
 docker ps
 
+INSERT INTO users (username, email, password, role, locked, failed_attempts) VALUES ('manager1', 'manager1@email.com', '12345', 'manager1', false, 0);
