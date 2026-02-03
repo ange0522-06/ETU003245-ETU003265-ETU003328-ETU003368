@@ -1,5 +1,14 @@
 import { useState, useEffect } from "react";
-import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, updateSignalementApi } from "./api";
+import {
+  getSignalementsApi,
+  getUsersApi,
+  blockUserApi,
+  unblockUserApi,
+  updateSignalementStatusApi,
+  syncSignalementsToFirebase,
+  getSignalementsFromFirebase,
+  updateSignalementApi
+} from "./api";
 import { useProfile } from "./ProfileContext";
 import { useNavigate } from "react-router-dom";
 
@@ -11,12 +20,16 @@ export default function Manager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [syncing, setSyncing] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
   const token = localStorage.getItem("token");
 
   // États pour l'édition
   const [editingId, setEditingId] = useState(null);
-  const [editFields, setEditFields] = useState({ surface: '', budget: '', entreprise: '', status: '' });
+  const [editFields, setEditFields] = useState({
+    surface: "",
+    budget: "",
+    entreprise: "",
+    status: ""
+  });
 
   useEffect(() => {
     async function fetchData() {
@@ -26,7 +39,7 @@ export default function Manager() {
         if (!token) throw new Error("Utilisateur non authentifié");
         const sig = await getSignalementsApi(token);
         setSignalements(sig);
-        
+
         try {
           const us = await getUsersApi(token);
           setUsers(us);
@@ -43,74 +56,40 @@ export default function Manager() {
     fetchData();
   }, [token]);
 
-  // Auto-clear success message after 5 seconds
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => setSuccessMessage(""), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
-
-  // Synchronisation Firebase - Exporter vers Firebase
   const handleSyncToFirebase = async () => {
     if (!token) {
-      setError("Token d'authentification manquant. Veuillez vous reconnecter.");
+      alert("Token d'authentification manquant. Veuillez vous reconnecter.");
       return;
     }
 
     setSyncing(true);
     setError("");
-    setSuccessMessage("");
-    
     try {
-      console.log("🔄 Début de la synchronisation vers Firebase...");
       const result = await syncSignalementsToFirebase(token);
-      
-      console.log("✅ Résultat de la synchronisation:", result);
-      
       const count = result.exportedCount || result.totalSignalements || 0;
-      setSuccessMessage(`✅ ${count} signalement(s) exporté(s) vers Firebase avec succès !`);
-      
+      alert(`✅ ${count} signalement(s) exporté(s) vers Firebase avec succès !`);
     } catch (err) {
-      console.error("❌ Erreur lors de la synchronisation:", err);
-      
-      // Gestion des erreurs spécifiques
-      if (err.message.includes("403")) {
-        setError("❌ Accès refusé. Vérifiez que vous êtes bien connecté en tant que manager.");
-      } else if (err.message.includes("401")) {
-        setError("❌ Session expirée. Veuillez vous reconnecter.");
-        setTimeout(() => navigate("/auth"), 2000);
-      } else if (err.message.includes("SERVICE_UNAVAILABLE") || err.message.includes("503")) {
-        setError("❌ Firebase Firestore n'est pas disponible. Vérifiez la configuration.");
-      } else {
-        setError(`❌ ${err.message || "Erreur lors de la synchronisation vers Firebase"}`);
-      }
+      setError(err.message || "Erreur lors de la synchronisation vers Firebase");
     } finally {
       setSyncing(false);
     }
   };
 
-  // Synchronisation Firebase - Récupérer depuis Firebase
   const handleGetFromFirebase = async () => {
     if (!token) {
-      setError("Token d'authentification manquant. Veuillez vous reconnecter.");
+      alert("Token d'authentification manquant. Veuillez vous reconnecter.");
       return;
     }
 
     setSyncing(true);
     setError("");
-    setSuccessMessage("");
-    
     try {
-      console.log("📥 Récupération des signalements depuis Firebase...");
       const sig = await getSignalementsFromFirebase(token);
-      
-      console.log("✅ Signalements récupérés:", sig);
-      
-      const mapped = sig.map(s => ({
+
+      const mapped = sig.map((s) => ({
         id: s.idSignalement || s.id,
         status: s.statut || s.status,
-        date: s.dateSignalement ? s.dateSignalement.split('T')[0] : s.date || '',
+        date: s.dateSignalement ? s.dateSignalement.split("T")[0] : s.date || "",
         surface: s.surfaceM2 || s.surface,
         budget: s.budget,
         entreprise: s.entreprise,
@@ -120,24 +99,11 @@ export default function Manager() {
         description: s.description,
         id_user: s.id_user
       }));
-      
+
       setSignalements(mapped);
-      setSuccessMessage(`✅ ${mapped.length} signalement(s) récupéré(s) depuis Firebase !`);
-      
+      alert(`✅ ${mapped.length} signalement(s) récupéré(s) depuis Firebase !`);
     } catch (err) {
-      console.error("❌ Erreur lors de la récupération:", err);
-      
-      // Gestion des erreurs spécifiques
-      if (err.message.includes("403")) {
-        setError("❌ Accès refusé. Vérifiez que vous êtes bien connecté en tant que manager.");
-      } else if (err.message.includes("401")) {
-        setError("❌ Session expirée. Veuillez vous reconnecter.");
-        setTimeout(() => navigate("/auth"), 2000);
-      } else if (err.message.includes("SERVICE_UNAVAILABLE") || err.message.includes("503")) {
-        setError("❌ Firebase Firestore n'est pas disponible. Vérifiez la configuration.");
-      } else {
-        setError(`❌ ${err.message || "Erreur lors de la récupération depuis Firebase"}`);
-      }
+      setError(err.message || "Erreur lors de la récupération depuis Firebase");
     } finally {
       setSyncing(false);
     }
@@ -146,28 +112,27 @@ export default function Manager() {
   const changeStatus = async (id, newStatus) => {
     try {
       await updateSignalementStatusApi(id, newStatus, token);
-      setSignalements(signalements.map(s =>
-        s.id === id ? { ...s, status: newStatus } : s
-      ));
-      setSuccessMessage("✅ Statut mis à jour avec succès");
+      setSignalements((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, status: newStatus } : s))
+      );
     } catch (err) {
-      setError(err.message || "Erreur lors de la modification du statut");
+      alert(err.message || "Erreur lors de la modification du statut");
     }
   };
 
   const startEdit = (s) => {
     setEditingId(s.id);
-    setEditFields({ 
-      surface: s.surface || '', 
-      budget: s.budget || '', 
-      entreprise: s.entreprise || '', 
-      status: s.status || '' 
+    setEditFields({
+      surface: s.surface || "",
+      budget: s.budget || "",
+      entreprise: s.entreprise || "",
+      status: s.status || ""
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditFields({ surface: '', budget: '', entreprise: '', status: '' });
+    setEditFields({ surface: "", budget: "", entreprise: "", status: "" });
   };
 
   const saveEdit = async (id) => {
@@ -179,47 +144,52 @@ export default function Manager() {
         statut: editFields.status
       };
       const updated = await updateSignalementApi(id, payload, token);
-      setSignalements(signalements.map(s =>
-        s.id === id ? {
-          ...s,
-          surface: updated.surfaceM2 ?? updated.surface ?? editFields.surface,
-          budget: updated.budget ?? editFields.budget,
-          entreprise: updated.entreprise ?? editFields.entreprise,
-          status: updated.statut ?? updated.status ?? editFields.status
-        } : s
-      ));
+      setSignalements((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? {
+                ...s,
+                surface: updated.surfaceM2 ?? updated.surface ?? editFields.surface,
+                budget: updated.budget ?? editFields.budget,
+                entreprise: updated.entreprise ?? editFields.entreprise,
+                status: updated.statut ?? updated.status ?? editFields.status
+              }
+            : s
+        )
+      );
       setEditingId(null);
-      setSuccessMessage('✅ Signalement mis à jour avec succès');
+      alert("✅ Signalement mis à jour avec succès");
     } catch (err) {
-      setError(err.message || 'Erreur lors de la mise à jour du signalement');
+      alert(err.message || "Erreur lors de la mise à jour du signalement");
     }
   };
 
   const unblockUser = async (id) => {
     try {
       await unblockUserApi(id, token);
-      setUsers(users.map(u =>
-        u.id === id ? { ...u, blocked: false, field_attempts: 0, locked: false } : u
-      ));
-      setSuccessMessage("✅ Utilisateur débloqué avec succès");
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === id ? { ...u, blocked: false, field_attempts: 0, locked: false } : u
+        )
+      );
+      alert("✅ Utilisateur débloqué avec succès");
     } catch (err) {
-      setError(err.message || "Erreur lors du déblocage");
+      alert(err.message || "Erreur lors du déblocage");
     }
   };
 
   const blockUser = async (id) => {
     try {
       await blockUserApi(id, token);
-      setUsers(users.map(u =>
-        u.id === id ? { ...u, blocked: true, locked: true } : u
-      ));
-      setSuccessMessage("✅ Utilisateur bloqué avec succès");
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, blocked: true, locked: true } : u))
+      );
+      alert("⛔ Utilisateur bloqué avec succès");
     } catch (err) {
-      setError(err.message || "Erreur lors du blocage");
+      alert(err.message || "Erreur lors du blocage");
     }
   };
 
-  // Fonction pour rediriger vers la page Auth pour créer un utilisateur
   const handleNavigateToCreateUser = () => {
     navigate("/auth", { state: { fromManager: true } });
   };
@@ -227,127 +197,142 @@ export default function Manager() {
   if (profile !== "manager") {
     return (
       <div className="manager-page">
-        <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
+        <div className="content-container" style={{ textAlign: "center", padding: "60px" }}>
           <div className="error-alert">
-            <span style={{color:'#ff6b6b', fontSize: '3rem'}}>⛔</span>
-            <h3 style={{color:'#ff6b6b', margin: '20px 0'}}>Accès réservé au manager</h3>
-            <p style={{color:'#a0a0e0'}}>Vous devez être connecté en tant que manager pour accéder à cette page.</p>
+            <span style={{ color: "#ff6b6b", fontSize: "3rem" }}>⛔</span>
+            <h3 style={{ color: "#ff6b6b", margin: "20px 0" }}>Accès réservé au manager</h3>
+            <p style={{ color: "#a0a0e0" }}>
+              Vous devez être connecté en tant que manager pour accéder à cette page.
+            </p>
           </div>
         </div>
       </div>
     );
   }
-  
-  if (loading) return (
-    <div className="manager-page">
-      <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p style={{marginTop: '20px', color: 'white'}}>Chargement des données...</p>
+
+  if (loading) {
+    return (
+      <div className="manager-page">
+        <div className="content-container" style={{ textAlign: "center", padding: "60px" }}>
+          <div className="loading-spinner">
+            <div className="spinner"></div>
+            <p style={{ marginTop: "20px", color: "white" }}>Chargement des données...</p>
+          </div>
         </div>
       </div>
-    </div>
-  );
-  
+    );
+  }
+
   return (
     <div className="manager-page">
       <div className="page-header">
-        <h1 className="page-title">
-          👨‍💼 Espace Manager
-        </h1>
-        <p className="page-subtitle">
-          Gestion des signalements et administration des utilisateurs
-        </p>
+        <h1 className="page-title">👨‍💼 Espace Manager</h1>
+        <p className="page-subtitle">Gestion des signalements et administration des utilisateurs</p>
       </div>
 
       <div className="content-container">
         {error && (
-          <div className="error-alert" style={{marginBottom: 20, padding: '15px', background: 'rgba(255, 107, 107, 0.1)', border: '1px solid #ff6b6b', borderRadius: '8px'}}>
-            <span style={{color:'#ff6b6b', fontSize: '2rem'}}>⚠️</span>
-            <p style={{color:'#ff6b6b', margin: '10px 0', fontWeight: '500'}}>{error}</p>
-            <button 
+          <div
+            className="error-alert"
+            style={{
+              marginBottom: 20,
+              padding: "15px",
+              background: "rgba(255, 107, 107, 0.1)",
+              border: "1px solid #ff6b6b",
+              borderRadius: "8px"
+            }}
+          >
+            <span style={{ color: "#ff6b6b", fontSize: "2rem" }}>⚠️</span>
+            <p style={{ color: "#ff6b6b", margin: "10px 0", fontWeight: "500" }}>{error}</p>
+            <button
               onClick={() => setError("")}
               style={{
-                marginTop: '10px',
-                padding: '8px 16px',
-                background: '#ff6b6b',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontWeight: '500'
+                marginTop: "10px",
+                padding: "8px 16px",
+                background: "#ff6b6b",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: "500"
               }}
             >
               Fermer
             </button>
           </div>
         )}
-        <div style={{display: 'flex', gap: '16px', marginBottom: 24}}>
-          {profile === "manager" && (
-            <>
-              <button 
-                onClick={handleSyncToFirebase} 
-                disabled={syncing}
-                style={{
-                  background: syncing ? '#9e9e9e' : '#4caf50', 
-                  color: 'white', 
-                  padding: '10px 18px', 
-                  borderRadius: 6, 
-                  border: 'none', 
-                  fontWeight: 600, 
-                  cursor: syncing ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                {syncing ? '⏳ Synchronisation...' : '⬆️ Synchroniser vers Firebase (Mobile)'}
-              </button>
-              <button 
-                onClick={handleGetFromFirebase} 
-                disabled={syncing}
-                style={{
-                  background: syncing ? '#9e9e9e' : '#2196f3', 
-                  color: 'white', 
-                  padding: '10px 18px', 
-                  borderRadius: 6, 
-                  border: 'none', 
-                  fontWeight: 600, 
-                  cursor: syncing ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                {syncing ? '⏳ Chargement...' : '⬇️ Récupérer depuis Firebase'}
-              </button>
-              <button 
-               onClick={handleNavigateToCreateUser}
-                style={{
-                  background: '#9c27b0', 
-                  color: 'white', 
-                  padding: '10px 18px', 
-                  borderRadius: 6, 
-                  border: 'none', 
-                  fontWeight: 600, 
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <span>➕</span> Créer un utilisateur
-              </button>
-            </>
-          )}
+
+        <div style={{ display: "flex", gap: "16px", marginBottom: 24 }}>
+          <button
+            onClick={handleSyncToFirebase}
+            disabled={syncing}
+            style={{
+              background: syncing ? "#9e9e9e" : "#4caf50",
+              color: "white",
+              padding: "10px 18px",
+              borderRadius: 6,
+              border: "none",
+              fontWeight: 600,
+              cursor: syncing ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px"
+            }}
+          >
+            {syncing ? "⏳ Synchronisation..." : "⬆️ Synchroniser vers Firebase (Mobile)"}
+          </button>
+
+          <button
+            onClick={handleGetFromFirebase}
+            disabled={syncing}
+            style={{
+              background: syncing ? "#9e9e9e" : "#2196f3",
+              color: "white",
+              padding: "10px 18px",
+              borderRadius: 6,
+              border: "none",
+              fontWeight: 600,
+              cursor: syncing ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px"
+            }}
+          >
+            {syncing ? "⏳ Chargement..." : "⬇️ Récupérer depuis Firebase"}
+          </button>
+
+          <button
+            onClick={handleNavigateToCreateUser}
+            style={{
+              background: "#9c27b0",
+              color: "white",
+              padding: "10px 18px",
+              borderRadius: 6,
+              border: "none",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px"
+            }}
+          >
+            <span>➕</span> Créer un utilisateur
+          </button>
         </div>
 
-        {/* Gestion des signalements */}
-        <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#2c3e50'}}>
+        <h2
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            marginBottom: "20px",
+            color: "#2c3e50"
+          }}
+        >
           📋 Gestion des signalements
         </h2>
-        
-        <div style={{overflowX: 'auto', marginBottom: '40px'}}>
+
+        <div style={{ overflowX: "auto", marginBottom: "40px" }}>
           <table>
             <thead>
               <tr>
@@ -362,38 +347,48 @@ export default function Manager() {
             <tbody>
               {signalements.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{textAlign: 'center', padding: '40px'}}>
-                    <div style={{color: '#7f8c8d'}}>
-                      <span style={{fontSize: '3rem'}}>📭</span>
-                      <p style={{marginTop: '10px'}}>Aucun signalement disponible</p>
+                  <td colSpan="6" style={{ textAlign: "center", padding: "40px" }}>
+                    <div style={{ color: "#7f8c8d" }}>
+                      <span style={{ fontSize: "3rem" }}>📭</span>
+                      <p style={{ marginTop: "10px" }}>Aucun signalement disponible</p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                signalements.map(s => (
+                signalements.map((s) => (
                   <tr key={s.id}>
                     <td>
-                      <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <span>📅</span>
                         {s.date}
                       </div>
                     </td>
                     <td>
-                      <span style={{
-                        padding: '6px 12px',
-                        borderRadius: '20px',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        background: 
-                          s.status === 'termine' ? 'rgba(76, 175, 80, 0.2)' :
-                          s.status === 'en cours' ? 'rgba(255, 193, 7, 0.2)' :
-                          'rgba(33, 150, 243, 0.2)',
-                        color: 
-                          s.status === 'termine' ? '#4caf50' :
-                          s.status === 'en cours' ? '#ffc107' :
-                          '#2196f3'
-                      }}>
-                        {s.status === 'termine' ? '✅ terminé' : s.status === 'en cours' ? '🔄 en cours' : '🆕 nouveau'}
+                      <span
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "20px",
+                          fontSize: "0.85rem",
+                          fontWeight: "600",
+                          background:
+                            s.status === "termine"
+                              ? "rgba(76, 175, 80, 0.2)"
+                              : s.status === "en cours"
+                              ? "rgba(255, 193, 7, 0.2)"
+                              : "rgba(33, 150, 243, 0.2)",
+                          color:
+                            s.status === "termine"
+                              ? "#4caf50"
+                              : s.status === "en cours"
+                              ? "#ffc107"
+                              : "#2196f3"
+                        }}
+                      >
+                        {s.status === "termine"
+                          ? "✅ terminé"
+                          : s.status === "en cours"
+                          ? "🔄 en cours"
+                          : "🆕 nouveau"}
                       </span>
                     </td>
                     <td>
@@ -401,11 +396,11 @@ export default function Manager() {
                         <input
                           type="number"
                           value={editFields.surface}
-                          onChange={e => setEditFields({ ...editFields, surface: e.target.value })}
-                          style={{padding: '6px', borderRadius: 6, width: 100}}
+                          onChange={(e) => setEditFields({ ...editFields, surface: e.target.value })}
+                          style={{ padding: "6px", borderRadius: 6, width: 100 }}
                         />
                       ) : (
-                        s.surface
+                        s.surface || "-"
                       )}
                     </td>
                     <td>
@@ -413,13 +408,13 @@ export default function Manager() {
                         <input
                           type="number"
                           value={editFields.budget}
-                          onChange={e => setEditFields({ ...editFields, budget: e.target.value })}
-                          style={{padding: '6px', borderRadius: 6, width: 120}}
+                          onChange={(e) => setEditFields({ ...editFields, budget: e.target.value })}
+                          style={{ padding: "6px", borderRadius: 6, width: 120 }}
                         />
                       ) : (
-                        <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                           <span>💰</span>
-                          {s.budget}
+                          {s.budget || "-"}
                         </div>
                       )}
                     </td>
@@ -427,59 +422,79 @@ export default function Manager() {
                       {editingId === s.id ? (
                         <input
                           value={editFields.entreprise}
-                          onChange={e => setEditFields({ ...editFields, entreprise: e.target.value })}
-                          style={{padding: '6px', borderRadius: 6, width: 160}}
+                          onChange={(e) => setEditFields({ ...editFields, entreprise: e.target.value })}
+                          style={{ padding: "6px", borderRadius: 6, width: 160 }}
                         />
                       ) : (
-                        s.entreprise
+                        s.entreprise || "-"
                       )}
                     </td>
                     <td>
                       {editingId === s.id ? (
-                        <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <select
                             value={editFields.status}
-                            onChange={e => setEditFields({ ...editFields, status: e.target.value })}
-                            style={{padding: '6px', borderRadius: 6}}
+                            onChange={(e) => setEditFields({ ...editFields, status: e.target.value })}
+                            style={{ padding: "6px", borderRadius: 6 }}
                           >
                             <option value="nouveau">🆕 Nouveau</option>
                             <option value="en cours">🔄 En cours</option>
                             <option value="termine">✅ Terminé</option>
                           </select>
-                          <button 
-                            onClick={() => saveEdit(s.id)} 
-                            style={{padding: '6px 10px', background: '#4caf50', color: 'white', borderRadius: 6, border: 'none', cursor: 'pointer'}}
+                          <button
+                            onClick={() => saveEdit(s.id)}
+                            style={{
+                              padding: "6px 10px",
+                              background: "#4caf50",
+                              color: "white",
+                              borderRadius: 6,
+                              border: "none",
+                              cursor: "pointer"
+                            }}
                           >
                             Sauvegarder
                           </button>
-                          <button 
-                            onClick={cancelEdit} 
-                            style={{padding: '6px 10px', background: '#e0e0e0', borderRadius: 6, border: 'none', cursor: 'pointer'}}
+                          <button
+                            onClick={cancelEdit}
+                            style={{
+                              padding: "6px 10px",
+                              background: "#e0e0e0",
+                              borderRadius: 6,
+                              border: "none",
+                              cursor: "pointer"
+                            }}
                           >
                             Annuler
                           </button>
                         </div>
                       ) : (
-                        <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
-                          <select 
-                            value={s.status} 
-                            onChange={e => changeStatus(s.id, e.target.value)}
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <select
+                            value={s.status || "nouveau"}
+                            onChange={(e) => changeStatus(s.id, e.target.value)}
                             style={{
-                              minWidth: '140px',
-                              padding: '8px 12px',
-                              borderRadius: '6px',
-                              border: '2px solid #ddd',
-                              backgroundColor: 'white',
-                              cursor: 'pointer'
+                              minWidth: "140px",
+                              padding: "8px 12px",
+                              borderRadius: "6px",
+                              border: "2px solid #ddd",
+                              backgroundColor: "white",
+                              cursor: "pointer"
                             }}
                           >
                             <option value="nouveau">🆕 Nouveau</option>
                             <option value="en cours">🔄 En cours</option>
                             <option value="termine">✅ Terminé</option>
                           </select>
-                          <button 
-                            onClick={() => startEdit(s)} 
-                            style={{padding: '6px 10px', background: '#ffc107', color: 'white', borderRadius: 6, border: 'none', cursor: 'pointer'}}
+                          <button
+                            onClick={() => startEdit(s)}
+                            style={{
+                              padding: "6px 10px",
+                              background: "#ffc107",
+                              color: "white",
+                              borderRadius: 6,
+                              border: "none",
+                              cursor: "pointer"
+                            }}
                           >
                             ✏️ Modifier
                           </button>
@@ -493,12 +508,19 @@ export default function Manager() {
           </table>
         </div>
 
-        {/* Gestion des utilisateurs */}
-        <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#2c3e50'}}>
+        <h2
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            marginBottom: "30px",
+            color: "#2c3e50"
+          }}
+        >
           👥 Gestion des utilisateurs
         </h2>
-        
-        <div style={{overflowX: 'auto', marginBottom: '30px'}}>
+
+        <div style={{ overflowX: "auto", marginBottom: "30px" }}>
           <table>
             <thead>
               <tr>
@@ -511,62 +533,64 @@ export default function Manager() {
             <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan="4" style={{textAlign: 'center', padding: '20px'}}>
+                  <td colSpan="4" style={{ textAlign: "center", padding: "20px" }}>
                     Aucun utilisateur trouvé ou erreur de chargement
                   </td>
                 </tr>
               ) : (
-                users.map(u => (
+                users.map((u) => (
                   <tr key={u.id}>
                     <td>
-                      <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                        <span>{u.role === 'manager' ? '👨‍💼' : '👤'}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span>{u.role === "manager" ? "👨‍💼" : "👤"}</span>
                         {u.email}
                       </div>
                     </td>
                     <td>
-                      <span style={{
-                        padding: '6px 12px',
-                        borderRadius: '20px',
-                        fontSize: '0.9rem',
-                        fontWeight: '500',
-                        background: u.blocked ? 'rgba(255, 107, 107, 0.2)' : 'rgba(76, 175, 80, 0.2)',
-                        color: u.blocked ? '#ff6b6b' : '#4caf50'
-                      }}>
+                      <span
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "20px",
+                          fontSize: "0.9rem",
+                          fontWeight: "500",
+                          background: u.blocked ? "rgba(255, 107, 107, 0.2)" : "rgba(76, 175, 80, 0.2)",
+                          color: u.blocked ? "#ff6b6b" : "#4caf50"
+                        }}
+                      >
                         {u.blocked ? "⛔ Bloqué" : "✅ Actif"}
                       </span>
                     </td>
                     <td>
-                      <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <span>⏰</span>
-                        {u.lastLogin}
+                        {u.lastLogin || "—"}
                       </div>
                     </td>
                     <td>
                       {u.blocked ? (
-                        <button 
-                          onClick={() => unblockUser(u.id)} 
+                        <button
+                          onClick={() => unblockUser(u.id)}
                           style={{
-                            background: 'rgba(76, 175, 80, 0.2)', 
-                            color: '#4caf50',
-                            border: '1px solid #4caf50',
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            cursor: 'pointer'
+                            background: "rgba(76, 175, 80, 0.2)",
+                            color: "#4caf50",
+                            border: "1px solid #4caf50",
+                            padding: "6px 12px",
+                            borderRadius: "6px",
+                            cursor: "pointer"
                           }}
                         >
                           <span>✅</span> Débloquer
                         </button>
                       ) : (
-                        <button 
-                          onClick={() => blockUser(u.id)} 
+                        <button
+                          onClick={() => blockUser(u.id)}
                           style={{
-                            background: 'rgba(255, 107, 107, 0.2)', 
-                            color: '#ff6b6b',
-                            border: '1px solid #ff6b6b',
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            cursor: 'pointer'
+                            background: "rgba(255, 107, 107, 0.2)",
+                            color: "#ff6b6b",
+                            border: "1px solid #ff6b6b",
+                            padding: "6px 12px",
+                            borderRadius: "6px",
+                            cursor: "pointer"
                           }}
                         >
                           <span>⛔</span> Bloquer
@@ -580,27 +604,34 @@ export default function Manager() {
           </table>
         </div>
 
-        {/* Statistiques */}
-        <div className="card" style={{marginTop: '40px', background: 'rgba(255, 255, 255, 0.9)'}}>
-          <h3 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', color: '#2c3e50'}}>
+        <div className="card" style={{ marginTop: "40px", background: "rgba(255, 255, 255, 0.9)" }}>
+          <h3
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              marginBottom: "15px",
+              color: "#2c3e50"
+            }}
+          >
             📊 Statistiques rapides
           </h3>
-          <div style={{display: 'flex', gap: '30px', flexWrap: 'wrap'}}>
+          <div style={{ display: "flex", gap: "30px", flexWrap: "wrap" }}>
             <div>
-              <div style={{fontSize: '2rem', color: '#4a54e1'}}>{signalements.length}</div>
-              <div style={{color: '#7f8c8d', fontSize: '0.9rem'}}>Signalements</div>
+              <div style={{ fontSize: "2rem", color: "#4a54e1" }}>{signalements.length}</div>
+              <div style={{ color: "#7f8c8d", fontSize: "0.9rem" }}>Signalements</div>
             </div>
             <div>
-              <div style={{fontSize: '2rem', color: '#00b894'}}>
-                {users.filter(u => !u.blocked).length}
+              <div style={{ fontSize: "2rem", color: "#00b894" }}>
+                {users.filter((u) => !u.blocked).length}
               </div>
-              <div style={{color: '#7f8c8d', fontSize: '0.9rem'}}>Utilisateurs actifs</div>
+              <div style={{ color: "#7f8c8d", fontSize: "0.9rem" }}>Utilisateurs actifs</div>
             </div>
             <div>
-              <div style={{fontSize: '2rem', color: '#ffc107'}}>
-                {signalements.filter(s => s.status === 'en cours').length}
+              <div style={{ fontSize: "2rem", color: "#ffc107" }}>
+                {signalements.filter((s) => s.status === "en cours").length}
               </div>
-              <div style={{color: '#7f8c8d', fontSize: '0.9rem'}}>En cours</div>
+              <div style={{ color: "#7f8c8d", fontSize: "0.9rem" }}>En cours</div>
             </div>
           </div>
         </div>
