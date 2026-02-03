@@ -1,8 +1,106 @@
 // API service for fetching reports/points data
+// Supporte à la fois le backend REST et Firebase Firestore
+
+import { db } from '../firebase.js';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+
 const API_BASE_URL = 'http://localhost:8080/api'; // Adjust based on your backend URL
 
 export const apiService = {
-  // Fetch all reports/points
+  // ==================== FIREBASE FIRESTORE ====================
+  
+  // Récupérer tous les signalements depuis Firebase (synchronisés par le Manager)
+  async getSignalementsFromFirebase() {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'signalements'));
+      const signalements = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.getData ? doc.getData() : doc.data();
+        signalements.push({
+          id: doc.id,
+          idSignalement: data.idSignalement || doc.id,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          titre: data.titre || 'Signalement',
+          description: data.description || '',
+          status: data.statut || data.status || 'nouveau',
+          date: data.dateSignalement ? data.dateSignalement.split('T')[0] : '',
+          surface: data.surfaceM2 || data.surface,
+          budget: data.budget,
+          entreprise: data.entreprise,
+          id_user: data.id_user,
+          type: data.type || 'non spécifié'
+        });
+      });
+      console.log('✅ Signalements récupérés depuis Firebase:', signalements.length);
+      return signalements;
+    } catch (error) {
+      console.error('❌ Erreur Firebase:', error);
+      throw error;
+    }
+  },
+
+  // Écouter les changements en temps réel depuis Firebase
+  subscribeToSignalements(callback) {
+    const unsubscribe = onSnapshot(collection(db, 'signalements'), (snapshot) => {
+      const signalements = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        signalements.push({
+          id: doc.id,
+          idSignalement: data.idSignalement || doc.id,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          titre: data.titre || 'Signalement',
+          description: data.description || '',
+          status: data.statut || data.status || 'nouveau',
+          date: data.dateSignalement ? data.dateSignalement.split('T')[0] : '',
+          surface: data.surfaceM2 || data.surface,
+          budget: data.budget,
+          entreprise: data.entreprise,
+          id_user: data.id_user,
+          type: data.type || 'non spécifié'
+        });
+      });
+      console.log('🔄 Mise à jour temps réel Firebase:', signalements.length, 'signalements');
+      callback(signalements);
+    }, (error) => {
+      console.error('❌ Erreur écoute Firebase:', error);
+    });
+    return unsubscribe;
+  },
+
+  // Ajouter un nouveau signalement dans Firebase (créé depuis mobile)
+  async addSignalementToFirebase(signalement) {
+    try {
+      const docRef = await addDoc(collection(db, 'signalements'), {
+        ...signalement,
+        dateSignalement: new Date().toISOString(),
+        statut: 'nouveau'
+      });
+      console.log('✅ Signalement ajouté dans Firebase:', docRef.id);
+      return { id: docRef.id, ...signalement };
+    } catch (error) {
+      console.error('❌ Erreur ajout Firebase:', error);
+      throw error;
+    }
+  },
+
+  // Supprimer un signalement depuis Firebase
+  async deleteSignalementFromFirebase(signalementId) {
+    try {
+      await deleteDoc(doc(db, 'signalements', signalementId));
+      console.log('✅ Signalement supprimé de Firebase:', signalementId);
+      return true;
+    } catch (error) {
+      console.error('❌ Erreur suppression Firebase:', error);
+      throw error;
+    }
+  },
+
+  // ==================== BACKEND REST API ====================
+
+  // Fetch all reports/points from backend
   async getReports() {
     try {
       const response = await fetch(`${API_BASE_URL}/reports`);

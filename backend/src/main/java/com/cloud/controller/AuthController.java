@@ -32,10 +32,21 @@ public class AuthController {
 
     
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-        User user = authService.login(request.getEmail(), request.getPassword());
-        String token = authService.authenticate(request.getEmail(), request.getPassword());
-        return ResponseEntity.ok(new AuthResponse(token, user.getRole()));
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        try {
+            // AuthService renvoie un objet LoginResult (voir ci-dessous)
+            AuthService.LoginResult result = authService.tryLogin(request.getEmail(), request.getPassword());
+            if (result.isSuccess()) {
+                return ResponseEntity.ok(new AuthResponse(result.getToken(), result.getRole()));
+            } else if (result.isLocked()) {
+                return ResponseEntity.status(403).body("locked");
+            } else {
+                // Message d'échec avec nombre de tentatives
+                return ResponseEntity.status(403).body("failed attempts: " + result.getFailedAttempts());
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
     }
 
 }

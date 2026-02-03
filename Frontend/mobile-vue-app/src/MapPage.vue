@@ -160,7 +160,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -322,61 +322,75 @@ const submitReport = async () => {
 
   try {
     const reportData = {
-      latitude: Number(newReport.value.latitude),
-      longitude: Number(newReport.value.longitude),
-      type: newReport.value.type,
-      titre: newReport.value.titre,
-      description: newReport.value.description,
-      urgence: newReport.value.urgence || 'moyen',
+      ...newReport.value,
       status: 'nouveau',
       date: new Date().toISOString(),
       userId: currentUser.value ? currentUser.value.id : null,
       userName: currentUser.value ? (currentUser.value.name || currentUser.value.email) : 'Anonyme'
     };
 
-    // Enregistrer dans Firestore (collection 'signalements')
-    await addDoc(collection(db, 'signalements'), reportData);
+    // Envoyer le signalement vers Firebase
+    const savedReport = await apiService.addSignalementToFirebase(reportData);
+    
+    // Le signalement sera automatiquement ajouté via l'écoute temps réel
+    console.log('✅ Signalement créé:', savedReport.id);
 
     // Le listener Firestore mettra à jour `points` automatiquement
     closeReportModal();
     reportMode.value = false;
     alert('Signalement envoyé avec succès ! (stocké dans Firestore → collection "signalements")');
 
+
+    // Show success message
   } catch (err) {
     console.error('Error submitting report:', err);
     alert('Erreur lors de l\'envoi du signalement');
-  } finally {
     submittingReport.value = false;
   }
 };
 
-let unsubscribe = null;
-let authUnsubscribe = null;
-
 const deletePoint = async (pointId) => {
   try {
-    await deleteDoc(doc(db, 'signalements', pointId));
-    if (selectedPoint.value && selectedPoint.value.id === pointId) selectedPoint.value = null;
+    // Supprimer de Firebase
+    await apiService.deleteSignalementFromFirebase(String(pointId));
+    
+    // Le point sera automatiquement supprimé via l'écoute temps réel
+    if (selectedPoint.value && selectedPoint.value.id === pointId) {
+      selectedPoint.value = null;
+    }
+    console.log('✅ Signalement supprimé:', pointId);
   } catch (err) {
-    console.error('Erreur suppression signalement:', err);
-    // fallback local removal
-    const index = points.value.findIndex(p => p.id === pointId);
-    if (index > -1) points.value.splice(index, 1);
+    console.error('Erreur suppression:', err);
+    alert('Erreur lors de la suppression');
   }
 };
 
-onMounted(() => {
-  loading.value = true;
-  const q = query(collection(db, 'signalements'), orderBy('date', 'desc'));
-  unsubscribe = onSnapshot(q, (snapshot) => {
-    points.value = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-    loading.value = false;
-  }, (err) => {
-    console.error('Firestore snapshot error:', err);
-    console.error('snapshot err full:', err);
-    error.value = 'Erreur lors du chargement des signalements: ' + (err.message || err);
-    // expose full error for debug UI
-    authDebug.value.lastError = { code: err.code || null, message: err.message || String(err) };
+// Variable pour stocker la fonction de désabonnement Firebase
+let unsubscribeFirebase = null;
+
+onMounted(async () => {
+  try {
+    // Écouter les signalements depuis Firebase en temps réel
+    unsubscribeFirebase = apiService.subscribeToSignalements((signalements) => {
+      points.value = signalements;
+      loading.value = false;
+      console.log('📍 Points mis à jour depuis Firebase:', signalements.length);
+    });
+
+    // Fallback: si pas de données Firebase après 5s, utiliser les données mock
+    setTimeout(() => {
+      if (loading.value && points.value.length === 0) {
+        console.log('⚠️ Fallback vers données mock');
+        points.value = apiService.getMockReports();
+        loading.value = false;
+      }
+    }, 5000);
+
+  } catch (err) {
+    console.error('Erreur chargement Firebase:', err);
+    error.value = 'Erreur lors du chargement des données Firebase';
+    // Fallback vers données mock
+    points.value = apiService.getMockReports();
     loading.value = false;
   });
 
@@ -399,6 +413,14 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (unsubscribe) unsubscribe();
   if (authUnsubscribe) authUnsubscribe();
+});
+
+// Nettoyage de l'abonnement Firebase quand le composant est détruit
+onUnmounted(() => {
+  if (unsubscribeFirebase) {
+    unsubscribeFirebase();
+    console.log('🔌 Désabonnement Firebase');
+  }
 });
 </script>
 

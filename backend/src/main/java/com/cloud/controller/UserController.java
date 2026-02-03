@@ -15,8 +15,13 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('manager')")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+    @GetMapping("/locked")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    public List<User> getLockedUsers() {
+        return userRepository.findByLockedTrue();
     }
 }

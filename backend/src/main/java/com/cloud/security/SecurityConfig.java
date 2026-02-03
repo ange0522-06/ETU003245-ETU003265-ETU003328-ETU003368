@@ -41,13 +41,14 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api/stats",
                                 "/api/auth/firebase/**",
+                                "/api/firebase/**",
                                 "/api/test/**",
                                 "/api/admin/users/**",
                                  "/swagger-ui/**",
                                  "/v3/api-docs/**"
                 ).permitAll()
-                .requestMatchers("/api/users/**").hasAuthority("manager")
-                .requestMatchers("/api/manager/**").hasAuthority("manager")
+                .requestMatchers("/api/users/**").hasAuthority("ROLE_MANAGER")
+                .requestMatchers("/api/manager/**").hasAuthority("ROLE_MANAGER")
                 .anyRequest().authenticated()
             )
         			.addFilterBefore(jwtFilter,
