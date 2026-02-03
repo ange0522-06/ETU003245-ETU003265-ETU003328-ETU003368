@@ -21,4 +21,10 @@ public class SignalementService {
     public Signalement addSignalement(Signalement signalement) {
         return signalementRepository.save(signalement);
     }
+
+    public void updateStatus(Long id, String newStatus) {
+        Signalement s = signalementRepository.findById(id).orElseThrow();
+        s.setStatut(newStatus);
+        signalementRepository.save(s);
+    }
 }

@@ -1,3 +1,4 @@
+
 package com.cloud.controller;
 
 import com.cloud.model.User;
@@ -47,6 +48,11 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(403).body(e.getMessage());
         }
+    }
+    @GetMapping("/has-manager")
+    public ResponseEntity<?> hasManager() {
+        boolean exists = authService.hasManager();
+        return ResponseEntity.ok(Map.of("hasManager", exists));
     }
 
 }

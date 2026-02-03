@@ -1,6 +1,53 @@
 import { useState, useEffect } from "react";
-import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase } from "./api";
+import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, registerApi } from "./api";
 import { useProfile } from "./ProfileContext";
+import { useNavigate } from "react-router-dom"; // Ajoutez cette importation
+
+export default function Manager() {
+  const { profile } = useProfile();
+  const navigate = useNavigate(); // Ajoutez ceci
+  const [signalements, setSignalements] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const token = localStorage.getItem("token");
+
+  // États pour la création d'utilisateur
+  const [showCreateUserForm, setShowCreateUserForm] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserConfirmPassword, setNewUserConfirmPassword] = useState("");
+  const [newUserRole, setNewUserRole] = useState("user");
+  const [createUserError, setCreateUserError] = useState("");
+  const [createUserSuccess, setCreateUserSuccess] = useState("");
+  const [creatingUser, setCreatingUser] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      setError("");
+      try {
+        if (!token) throw new Error("Utilisateur non authentifié");
+        const sig = await getSignalementsApi(token);
+        setSignalements(sig);
+        
+        try {
+          const us = await getUsersApi(token);
+          setUsers(us);
+        } catch (usersError) {
+          console.warn("Erreur lors de la récupération des utilisateurs:", usersError.message);
+          setUsers([]); // Initialiser avec un tableau vide
+          // Ne pas bloquer toute la page pour cette erreur
+        }
+      } catch (err) {
+        setError(err.message || "Erreur lors du chargement des données");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [token]);
+
   // Synchronisation Firebase
   const handleSyncToFirebase = async () => {
     try {
@@ -20,33 +67,6 @@ import { useProfile } from "./ProfileContext";
       alert(err.message || "Erreur lors de la récupération depuis Firebase");
     }
   };
-
-export default function Manager() {
-  const { profile } = useProfile();
-  const [signalements, setSignalements] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const token = localStorage.getItem("token");
-
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      setError("");
-      try {
-        if (!token) throw new Error("Utilisateur non authentifié");
-        const sig = await getSignalementsApi(token);
-        setSignalements(sig);
-        const us = await getUsersApi(token);
-        setUsers(us);
-      } catch (err) {
-        setError(err.message || "Erreur lors du chargement des données");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, [token]);
 
   const changeStatus = async (id, newStatus) => {
     try {
@@ -83,6 +103,13 @@ export default function Manager() {
     }
   };
 
+  // Fonction pour rediriger vers la page Auth pour créer un utilisateur
+  const handleNavigateToCreateUser = () => {
+    navigate("/auth", { state: { fromManager: true } });
+  };
+
+  // Supprimez la fonction handleCreateUser car on utilise maintenant Auth.jsx
+
   if (profile !== "manager") {
     return (
       <div className="manager-page">
@@ -96,6 +123,7 @@ export default function Manager() {
       </div>
     );
   }
+  
   if (loading) return (
     <div className="manager-page">
       <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
@@ -131,14 +159,24 @@ export default function Manager() {
       </div>
 
       <div className="content-container">
-        <div style={{display: 'flex', gap: '16px', marginBottom: 24}}>
+        {/* Boutons d'action en haut */}
+        <div style={{display: 'flex', gap: '16px', marginBottom: 24, flexWrap: 'wrap'}}>
           {profile === "manager" && (
             <>
-              <button onClick={handleSyncToFirebase} style={{background: '#4caf50', color: 'white', padding: '10px 18px', borderRadius: 6, border: 'none', fontWeight: 600, cursor: 'pointer'}}>⬆️ Synchroniser vers Firebase</button>
-              <button onClick={handleGetFromFirebase} style={{background: '#2196f3', color: 'white', padding: '10px 18px', borderRadius: 6, border: 'none', fontWeight: 600, cursor: 'pointer'}}>⬇️ Récupérer depuis Firebase</button>
+              <button onClick={handleSyncToFirebase} style={{background: '#4caf50', color: 'white', padding: '10px 18px', borderRadius: 6, border: 'none', fontWeight: 600, cursor: 'pointer'}}>
+                <span>⬆️</span> Synchroniser vers Firebase
+              </button>
+              <button onClick={handleGetFromFirebase} style={{background: '#2196f3', color: 'white', padding: '10px 18px', borderRadius: 6, border: 'none', fontWeight: 600, cursor: 'pointer'}}>
+                <span>⬇️</span> Récupérer depuis Firebase
+              </button>
+              <button onClick={handleNavigateToCreateUser} style={{background: '#9c27b0', color: 'white', padding: '10px 18px', borderRadius: 6, border: 'none', fontWeight: 600, cursor: 'pointer'}}>
+                <span>➕</span> Créer un utilisateur
+              </button>
             </>
           )}
         </div>
+
+        {/* Gestion des signalements */}
         <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#2c3e50'}}>
           📋 Gestion des signalements
         </h2>
@@ -211,6 +249,7 @@ export default function Manager() {
           </table>
         </div>
 
+        {/* Gestion des utilisateurs */}
         <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#2c3e50'}}>
           👥 Gestion des utilisateurs
         </h2>
@@ -271,6 +310,7 @@ export default function Manager() {
           </table>
         </div>
 
+        {/* Statistiques */}
         <div className="card" style={{marginTop: '40px', background: 'rgba(255, 255, 255, 0.9)'}}>
           <h3 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', color: '#2c3e50'}}>
             📊 Statistiques rapides

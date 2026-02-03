@@ -6,7 +6,8 @@ import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import com.google.firebase.FirebaseApp;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -16,8 +17,8 @@ import java.util.concurrent.ExecutionException;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class FireStoreService {
+    private static final Logger log = LoggerFactory.getLogger(FireStoreService.class);
     
     private final FirebaseApp firebaseApp;
     
