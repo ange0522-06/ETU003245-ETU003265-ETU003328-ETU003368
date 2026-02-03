@@ -10,7 +10,10 @@ export function ProfileProvider({ children }) {
   const [profile, setProfile] = useState("visiteur"); // visiteur, utilisateur, manager
 
   const login = (role) => setProfile(role);
-  const logout = () => setProfile("visiteur");
+  const logout = () => {
+    localStorage.removeItem("token");
+    setProfile("visiteur");
+  };
 
   return (
     <ProfileContext.Provider value={{ profile, login, logout }}>
