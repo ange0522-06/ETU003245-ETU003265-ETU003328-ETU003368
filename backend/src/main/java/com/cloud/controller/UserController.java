@@ -1,4 +1,3 @@
-    
 package com.cloud.controller;
 
 import com.cloud.model.User;

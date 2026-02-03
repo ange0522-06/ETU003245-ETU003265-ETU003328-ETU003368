@@ -89,6 +89,10 @@ VALUES
   (20000, '2026-01-27 08:30:00', 'Route barrée', 'Colas', -18.8920, 47.5120, 'termine', 25, 'Route barrée', 7);
 
 
+UPDATE users 
+SET failed_attempts = 0, locked = false 
+WHERE email = 'manager@email.com';
+
 
 DOCKERISATION-tEST
 demarrage reel

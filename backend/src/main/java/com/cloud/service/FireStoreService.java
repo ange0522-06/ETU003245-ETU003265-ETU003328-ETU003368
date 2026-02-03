@@ -1,4 +1,3 @@
-
 package com.cloud.service;
 
 import com.google.api.core.ApiFuture;
@@ -8,7 +7,6 @@ import com.google.firebase.FirebaseApp;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -153,5 +151,30 @@ public class FireStoreService {
             log.warn("Erreur lors de la récupération des signalements Firestore: {}", e.getMessage());
         }
         return result;
+    }
+
+    /**
+     * Sauvegarder ou mettre à jour un seul signalement dans Firestore
+     */
+    public void saveSignalementToFirestore(com.cloud.model.Signalement s) {
+        try {
+            Firestore db = getFirestore();
+            Map<String, Object> data = new HashMap<>();
+            data.put("idSignalement", s.getIdSignalement());
+            data.put("titre", s.getTitre());
+            data.put("description", s.getDescription());
+            data.put("latitude", s.getLatitude());
+            data.put("longitude", s.getLongitude());
+            data.put("dateSignalement", s.getDateSignalement() != null ? s.getDateSignalement().toString() : null);
+            data.put("statut", s.getStatut());
+            data.put("surfaceM2", s.getSurfaceM2());
+            data.put("budget", s.getBudget());
+            data.put("entreprise", s.getEntreprise());
+            data.put("id_user", s.getUtilisateur() != null ? s.getUtilisateur().getId() : null);
+            db.collection("signalements").document(String.valueOf(s.getIdSignalement())).set(data);
+            log.info("Signalement {} sauvegardé dans Firestore", s.getIdSignalement());
+        } catch (Exception e) {
+            log.warn("Erreur sauvegarde signalement dans Firestore {}: {}", s.getIdSignalement(), e.getMessage());
+        }
     }
 }

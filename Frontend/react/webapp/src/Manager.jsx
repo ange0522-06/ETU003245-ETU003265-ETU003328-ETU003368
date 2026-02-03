@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase } from "./api";
+import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, updateSignalementApi } from "./api";
 import { useProfile } from "./ProfileContext";
 
 export default function Manager() {
@@ -16,9 +16,11 @@ export default function Manager() {
     setSyncing(true);
     try {
       const result = await syncSignalementsToFirebase(token);
+      setError("");
+      // small success feedback
       alert(`✅ ${result.exportedCount || 'Tous les'} signalements exportés vers Firebase !`);
     } catch (err) {
-      alert(err.message || "Erreur lors de la synchronisation vers Firebase");
+      setError(err.message || "Erreur lors de la synchronisation vers Firebase");
     } finally {
       setSyncing(false);
     }
@@ -44,9 +46,12 @@ export default function Manager() {
         id_user: s.id_user
       }));
       setSignalements(mapped);
+      setError("");
+      // keep a small non-blocking confirmation
+      // using alert for quick feedback but not for errors
       alert(`✅ ${mapped.length} signalements récupérés depuis Firebase !`);
     } catch (err) {
-      alert(err.message || "Erreur lors de la récupération depuis Firebase");
+      setError(err.message || "Erreur lors de la récupération depuis Firebase");
     } finally {
       setSyncing(false);
     }
@@ -79,6 +84,44 @@ export default function Manager() {
       ));
     } catch (err) {
       alert(err.message || "Erreur lors de la modification du statut");
+    }
+  };
+
+  const [editingId, setEditingId] = useState(null);
+  const [editFields, setEditFields] = useState({ surface: '', budget: '', entreprise: '', status: '' });
+
+  const startEdit = (s) => {
+    setEditingId(s.id);
+    setEditFields({ surface: s.surface || '', budget: s.budget || '', entreprise: s.entreprise || '', status: s.status || '' });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditFields({ surface: '', budget: '', entreprise: '', status: '' });
+  };
+
+  const saveEdit = async (id) => {
+    try {
+      const payload = {
+        surfaceM2: editFields.surface,
+        budget: editFields.budget,
+        entreprise: editFields.entreprise,
+        statut: editFields.status
+      };
+      const updated = await updateSignalementApi(id, payload, token);
+      setSignalements(signalements.map(s =>
+        s.id === id ? {
+          ...s,
+          surface: updated.surfaceM2 ?? updated.surface ?? editFields.surface,
+          budget: updated.budget ?? editFields.budget,
+          entreprise: updated.entreprise ?? editFields.entreprise,
+          status: updated.statut ?? updated.status ?? editFields.status
+        } : s
+      ));
+      setEditingId(null);
+      alert('✅ Signalement mis à jour et synchronisé');
+    } catch (err) {
+      alert(err.message || 'Erreur lors de la mise à jour du signalement');
     }
   };
 
@@ -130,17 +173,7 @@ export default function Manager() {
     </div>
   );
   
-  if (error) return (
-    <div className="manager-page">
-      <div className="content-container" style={{textAlign: 'center', padding: '60px'}}>
-        <div className="error-alert">
-          <span style={{color:'#ff6b6b', fontSize: '3rem'}}>⚠️</span>
-          <h3 style={{color:'#ff6b6b', margin: '20px 0'}}>Erreur de chargement</h3>
-          <p style={{color:'#a0a0e0'}}>{error}</p>
-        </div>
-      </div>
-    </div>
-  );
+  // Ne bloque plus l'affichage de la page : afficher une alerte non bloquante
   
   return (
     <div className="manager-page">
@@ -154,6 +187,16 @@ export default function Manager() {
       </div>
 
       <div className="content-container">
+        {error && (
+          <div className="error-alert" style={{marginBottom: 20}}>
+            <span style={{color:'#ff6b6b', fontSize: '2rem'}}>⚠️</span>
+            <h3 style={{color:'#ff6b6b', margin: '10px 0'}}>Erreur lors de la récupération des utilisateurs</h3>
+            <p style={{color:'#a0a0e0'}}>{error}</p>
+            <div style={{marginTop: 8}}>
+              <button onClick={() => window.location.reload()} style={{padding: '6px 12px'}}>Réessayer</button>
+            </div>
+          </div>
+        )}
         <div style={{display: 'flex', gap: '16px', marginBottom: 24}}>
           {profile === "manager" && (
             <>
@@ -236,31 +279,78 @@ export default function Manager() {
                       {s.status}
                     </span>
                   </td>
-                  <td>{s.surface}</td>
                   <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-                      <span>💰</span>
-                      {s.budget}
-                    </div>
+                    {editingId === s.id ? (
+                      <input
+                        value={editFields.surface}
+                        onChange={e => setEditFields({ ...editFields, surface: e.target.value })}
+                        style={{padding: '6px', borderRadius: 6, width: 100}}
+                      />
+                    ) : (
+                      s.surface
+                    )}
                   </td>
-                  <td>{s.entreprise}</td>
                   <td>
-                    <select 
-                      value={s.status} 
-                      onChange={e => changeStatus(s.id, e.target.value)}
-                      style={{
-                        minWidth: '140px',
-                        padding: '8px 12px',
-                        borderRadius: '6px',
-                        border: '2px solid #ddd',
-                        backgroundColor: 'white',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <option value="nouveau">🆕 Nouveau</option>
-                      <option value="en cours">🔄 En cours</option>
-                      <option value="termine">✅ Terminé</option>
-                    </select>
+                    {editingId === s.id ? (
+                      <input
+                        value={editFields.budget}
+                        onChange={e => setEditFields({ ...editFields, budget: e.target.value })}
+                        style={{padding: '6px', borderRadius: 6, width: 120}}
+                      />
+                    ) : (
+                      <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                        <span>💰</span>
+                        {s.budget}
+                      </div>
+                    )}
+                  </td>
+                  <td>
+                    {editingId === s.id ? (
+                      <input
+                        value={editFields.entreprise}
+                        onChange={e => setEditFields({ ...editFields, entreprise: e.target.value })}
+                        style={{padding: '6px', borderRadius: 6, width: 160}}
+                      />
+                    ) : (
+                      s.entreprise
+                    )}
+                  </td>
+                  <td>
+                    {editingId === s.id ? (
+                      <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+                        <select
+                          value={editFields.status}
+                          onChange={e => setEditFields({ ...editFields, status: e.target.value })}
+                          style={{padding: '6px', borderRadius: 6}}
+                        >
+                          <option value="nouveau">🆕 Nouveau</option>
+                          <option value="en cours">🔄 En cours</option>
+                          <option value="termine">✅ Terminé</option>
+                        </select>
+                        <button onClick={() => saveEdit(s.id)} style={{padding: '6px 10px', background: '#4caf50', color: 'white', borderRadius: 6}}>Sauvegarder</button>
+                        <button onClick={cancelEdit} style={{padding: '6px 10px', background: '#e0e0e0', borderRadius: 6}}>Annuler</button>
+                      </div>
+                    ) : (
+                      <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+                        <select 
+                          value={s.status} 
+                          onChange={e => changeStatus(s.id, e.target.value)}
+                          style={{
+                            minWidth: '140px',
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            border: '2px solid #ddd',
+                            backgroundColor: 'white',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="nouveau">🆕 Nouveau</option>
+                          <option value="en cours">🔄 En cours</option>
+                          <option value="termine">✅ Terminé</option>
+                        </select>
+                        <button onClick={() => startEdit(s)} style={{padding: '6px 10px'}}>✏️ Edit</button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
