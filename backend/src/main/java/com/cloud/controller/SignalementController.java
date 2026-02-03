@@ -45,7 +45,6 @@ public class SignalementController {
         return ResponseEntity.ok(response);
     }
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public ResponseEntity<Signalement> updateSignalement(@PathVariable Long id, @RequestBody Signalement body) {
         Signalement updated = signalementService.updateSignalement(id, body);
         // synchroniser vers Firestore

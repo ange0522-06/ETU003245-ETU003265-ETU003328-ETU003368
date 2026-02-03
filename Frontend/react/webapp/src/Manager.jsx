@@ -282,92 +282,64 @@ export default function Manager() {
             </button>
           </div>
         )}
-
-        {successMessage && (
-          <div style={{
-            marginBottom: 20, 
-            padding: '15px', 
-            background: 'rgba(76, 175, 80, 0.1)', 
-            border: '1px solid #4caf50', 
-            borderRadius: '8px',
-            animation: 'slideIn 0.3s ease-out'
-          }}>
-            <p style={{color:'#4caf50', margin: '0', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px'}}>
-              <span>✅</span>
-              {successMessage}
-            </p>
-          </div>
-        )}
-
-        {/* Boutons Firebase */}
-        <div style={{display: 'flex', gap: '15px', marginBottom: '30px', flexWrap: 'wrap'}}>
-          <button
-            onClick={handleSyncToFirebase}
-            disabled={syncing}
-            style={{
-              padding: '12px 20px',
-              background: syncing ? '#ccc' : 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: syncing ? 'not-allowed' : 'pointer',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '1rem',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <span>{syncing ? '⏳' : '⬆️'}</span>
-            {syncing ? 'Synchronisation...' : 'SYNCHRONISER VERS FIREBASE'}
-          </button>
-          
-          <button
-            onClick={handleGetFromFirebase}
-            disabled={syncing}
-            style={{
-              padding: '12px 20px',
-              background: syncing ? '#ccc' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: syncing ? 'not-allowed' : 'pointer',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '1rem',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <span>{syncing ? '⏳' : '⬇️'}</span>
-            {syncing ? 'Récupération...' : 'RÉCUPÉRER DEPUIS FIREBASE'}
-          </button>
-
-          <button
-            onClick={handleNavigateToCreateUser}
-            style={{
-              padding: '12px 20px',
-              background: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '1rem',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <span>➕</span>
-            CRÉER UN UTILISATEUR
-          </button>
+        <div style={{display: 'flex', gap: '16px', marginBottom: 24}}>
+          {profile === "manager" && (
+            <>
+              <button 
+                onClick={handleSyncToFirebase} 
+                disabled={syncing}
+                style={{
+                  background: syncing ? '#9e9e9e' : '#4caf50', 
+                  color: 'white', 
+                  padding: '10px 18px', 
+                  borderRadius: 6, 
+                  border: 'none', 
+                  fontWeight: 600, 
+                  cursor: syncing ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {syncing ? '⏳ Synchronisation...' : '⬆️ Synchroniser vers Firebase (Mobile)'}
+              </button>
+              <button 
+                onClick={handleGetFromFirebase} 
+                disabled={syncing}
+                style={{
+                  background: syncing ? '#9e9e9e' : '#2196f3', 
+                  color: 'white', 
+                  padding: '10px 18px', 
+                  borderRadius: 6, 
+                  border: 'none', 
+                  fontWeight: 600, 
+                  cursor: syncing ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {syncing ? '⏳ Chargement...' : '⬇️ Récupérer depuis Firebase'}
+              </button>
+              <button 
+               onClick={handleNavigateToCreateUser}
+                style={{
+                  background: '#9c27b0', 
+                  color: 'white', 
+                  padding: '10px 18px', 
+                  borderRadius: 6, 
+                  border: 'none', 
+                  fontWeight: 600, 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span>➕</span> Créer un utilisateur
+              </button>
+            </>
+          )}
         </div>
 
         {/* Gestion des signalements */}
