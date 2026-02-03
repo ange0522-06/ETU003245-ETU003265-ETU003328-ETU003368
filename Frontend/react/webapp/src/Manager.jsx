@@ -236,6 +236,22 @@ export default function Manager() {
               >
                 {syncing ? '⏳ Chargement...' : '⬇️ Récupérer depuis Firebase'}
               </button>
+              <button 
+                style={{
+                  background: '#9c27b0', 
+                  color: 'white', 
+                  padding: '10px 18px', 
+                  borderRadius: 6, 
+                  border: 'none', 
+                  fontWeight: 600, 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span>➕</span> Créer un utilisateur
+              </button>
             </>
           )}
         </div>
