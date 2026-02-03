@@ -98,3 +98,13 @@ docker compose up -d
 verifier 
 docker ps
 
+1234@firebase
+
+test sur powershell
+ cd "C:\Users\Fenitra\AppData\Local\Android\Sdk\platform-tools" 
+PS C:\Users\Fenitra\AppData\Local\Android\Sdk\platform-tools>
+ .\adb.exe install -r "D:\ETUDES\etudes\ITU\S5\M_Rojo\ConceptionRelationnelle\TP\EXAMEN\quadrinome\ETU003245-ETU003265-ETU003328-ETU003368\Frontend\mobile-vue-app\android\app\build\outputs\apk\debug\app-debug.apk"             
+
+ s'il y a erreur '               
+PS C:\Users\Fenitra\AppData\Local\Android\Sdk\platform-tools> .\adb.exe kill-server 
+PS C:\Users\Fenitra\AppData\Local\Android\Sdk\platform-tools> .\adb.exe start-server  
