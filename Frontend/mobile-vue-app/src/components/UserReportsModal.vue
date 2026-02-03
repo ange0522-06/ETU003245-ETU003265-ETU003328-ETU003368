@@ -6,18 +6,18 @@
         <button @click="closeModal" class="close-btn">×</button>
       </div>
 
-      <div class="modal-body">
-        <div class="reports-controls" style="display:flex; gap:12px; align-items:center; margin-bottom:12px">
-          <label style="display:flex; align-items:center; gap:8px">
-            <span style="font-size:0.9rem; color:#7f8c8d">Du</span>
-            <input type="date" v-model="dateFrom" />
-          </label>
-          <label style="display:flex; align-items:center; gap:8px">
-            <span style="font-size:0.9rem; color:#7f8c8d">Au</span>
-            <input type="date" v-model="dateTo" />
-          </label>
-          <button class="btn" @click="resetPaging">Réinitialiser</button>
-        </div>
+        <div class="modal-body">
+          <div class="reports-controls" style="display:flex; gap:12px; align-items:center; margin-bottom:12px">
+            <label style="display:flex; align-items:center; gap:8px">
+              <span style="font-size:0.9rem; color:#7f8c8d">Du</span>
+              <input type="date" v-model="dateFrom" />
+            </label>
+            <label style="display:flex; align-items:center; gap:8px">
+              <span style="font-size:0.9rem; color:#7f8c8d">Au</span>
+              <input type="date" v-model="dateTo" />
+            </label>
+            <button class="btn" @click="resetPaging">Réinitialiser</button>
+          </div>
 
         <div v-if="visibleReports.length === 0" class="no-reports">
           <p>Vous n'avez encore aucun signalement sur cette période.</p>

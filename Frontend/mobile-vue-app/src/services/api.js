@@ -23,12 +23,13 @@ export const apiService = {
           longitude: data.longitude,
           titre: data.titre || 'Signalement',
           description: data.description || '',
-          status: data.statut || data.status || 'nouveau',
+            status: data.statut || data.status || 'nouveau',
           date: data.dateSignalement ? data.dateSignalement.split('T')[0] : '',
           surface: data.surfaceM2 || data.surface,
           budget: data.budget,
           entreprise: data.entreprise,
-          id_user: data.id_user,
+            id_user: data.id_user,
+            userId: data.id_user || data.userId || null,
           type: data.type || 'non spécifié'
         });
       });
@@ -59,6 +60,7 @@ export const apiService = {
           budget: data.budget,
           entreprise: data.entreprise,
           id_user: data.id_user,
+          userId: data.id_user || data.userId || null,
           type: data.type || 'non spécifié'
         });
       });

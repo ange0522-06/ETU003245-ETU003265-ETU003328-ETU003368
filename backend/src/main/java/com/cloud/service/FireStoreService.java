@@ -97,10 +97,13 @@ public class FireStoreService {
         try {
             Firestore db = getFirestore();
             // Test de connexion simple - essayer de lire un document
-            db.collection("health").document("check").get();
+            ApiFuture<DocumentSnapshot> f = db.collection("health").document("check").get();
+            // Wait briefly for result to detect connectivity issues
+            f.get();
             return true;
         } catch (Exception e) {
-            log.warn("Firestore non disponible: {}", e.getMessage());
+            log.warn("Firestore non disponible: {}", e.toString());
+            log.debug("Stack: ", e);
             return false;
         }
     }
@@ -148,7 +151,8 @@ public class FireStoreService {
                 result.add(data);
             }
         } catch (Exception e) {
-            log.warn("Erreur lors de la récupération des signalements Firestore: {}", e.getMessage());
+            log.warn("Erreur lors de la récupération des signalements Firestore: {}", e.toString());
+            log.debug("Stack: ", e);
         }
         return result;
     }

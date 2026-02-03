@@ -16,11 +16,14 @@
         <div class="dropdown-container">
           <button
             :class="['btn', showUserReportsModal ? 'btn-active' : 'btn-secondary']"
-            @click="showUserReportsModal = true"
+            @click="openMyReports"
           >
             👤 Mes signalements ▼
           </button>
         </div>
+        
+        <!-- Icône de notifications -->
+        <NotificationIcon />
       </div>
       <div v-if="reportMode" class="report-instructions">
         <p>📍 Cliquez sur la carte à l'emplacement du problème pour créer un signalement</p>
@@ -160,16 +163,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, onBeforeUnmount, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { db, auth } from './firebase.js';
+import { apiService } from './services/api.js';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import DetailsPanel from './components/DetailsPanel.vue';
 import RecapTable from './components/RecapTable.vue';
 import UserReportsModal from './components/UserReportsModal.vue';
+import NotificationIcon from './components/NotificationIcon.vue';
+import { notificationService } from './services/notificationService.js';
 
 // Fix for default markers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -283,11 +290,17 @@ const toggleReportMode = () => {
 };
 
 const toggleFilter = () => {
-  showUserReportsModal.value = true;
+  // open the dedicated MyReports page instead of modal
+  openMyReports();
 };
 
 const closeUserReportsModal = () => {
   showUserReportsModal.value = false;
+};
+
+const router = useRouter();
+const openMyReports = () => {
+  router.push({ name: 'MyReports' });
 };
 
 // Dropdown removed — use modal `showUserReportsModal` instead
@@ -365,13 +378,19 @@ const deletePoint = async (pointId) => {
   }
 };
 
-// Variable pour stocker la fonction de désabonnement Firebase
+// Variables pour stocker les fonctions de désabonnement Firebase et Auth
 let unsubscribeFirebase = null;
+let authUnsubscribe = null;
 
 onMounted(async () => {
   try {
     // Écouter les signalements depuis Firebase en temps réel
     unsubscribeFirebase = apiService.subscribeToSignalements((signalements) => {
+      // Vérifier les changements de statut pour les notifications
+      if (currentUser.value) {
+        notificationService.checkForStatusChanges(signalements, currentUser.value.id);
+      }
+      
       points.value = signalements;
       loading.value = false;
       console.log('📍 Points mis à jour depuis Firebase:', signalements.length);
@@ -392,8 +411,9 @@ onMounted(async () => {
     // Fallback vers données mock
     points.value = apiService.getMockReports();
     loading.value = false;
-  });
+  }
 
+  // Écoute de l'authentification Firebase
   authUnsubscribe = onAuthStateChanged(auth, (u) => {
     if (u) {
       currentUser.value = { id: u.uid, name: u.displayName || u.email, email: u.email };
@@ -411,15 +431,11 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  if (unsubscribe) unsubscribe();
-  if (authUnsubscribe) authUnsubscribe();
-});
-
-// Nettoyage de l'abonnement Firebase quand le composant est détruit
-onUnmounted(() => {
-  if (unsubscribeFirebase) {
-    unsubscribeFirebase();
-    console.log('🔌 Désabonnement Firebase');
+  if (typeof unsubscribeFirebase === 'function') {
+    try { unsubscribeFirebase(); } catch (e) { console.warn('Erreur lors du unsubscribeFirebase', e); }
+  }
+  if (typeof authUnsubscribe === 'function') {
+    try { authUnsubscribe(); } catch (e) { console.warn('Erreur lors du authUnsubscribe', e); }
   }
 });
 </script>
@@ -462,6 +478,7 @@ onUnmounted(() => {
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 
 .dropdown-container {
