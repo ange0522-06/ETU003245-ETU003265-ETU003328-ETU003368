@@ -74,6 +74,14 @@ CREATE TABLE synchronisation (
     type VARCHAR(20) CHECK (type IN ('IMPORT', 'EXPORT')),
     statut VARCHAR(20) CHECK (statut IN ('SUCCES', 'ECHEC'))
 );
+
+CREATE TABLE photo (
+    id SERIAL PRIMARY KEY,
+    nom TEXT NOT NULL
+);
+alter table signalement add column id_photo int;
+alter table signalement add FOREIGN KEY ON id_photo;
+---
 ---------------------Nampiana--------------
 
 INSERT INTO users (email, password, role, locked, failed_attempts) VALUES ('manager@email.com', '1234', 'manager', false, 0);
@@ -101,4 +109,13 @@ docker compose up -d
 verifier 
 docker ps
 
-INSERT INTO users (username, email, password, role, locked, failed_attempts) VALUES ('manager1', 'manager1@email.com', '12345', 'manager1', false, 0);
+1234@firebase
+
+test sur powershell
+ cd "C:\Users\Fenitra\AppData\Local\Android\Sdk\platform-tools" 
+PS C:\Users\Fenitra\AppData\Local\Android\Sdk\platform-tools>
+ .\adb.exe install -r "D:\ETUDES\etudes\ITU\S5\M_Rojo\ConceptionRelationnelle\TP\EXAMEN\quadrinome\ETU003245-ETU003265-ETU003328-ETU003368\Frontend\mobile-vue-app\android\app\build\outputs\apk\debug\app-debug.apk"             
+
+ s'il y a erreur '               
+PS C:\Users\Fenitra\AppData\Local\Android\Sdk\platform-tools> .\adb.exe kill-server 
+PS C:\Users\Fenitra\AppData\Local\Android\Sdk\platform-tools> .\adb.exe start-server  
