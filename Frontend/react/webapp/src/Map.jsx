@@ -93,15 +93,15 @@ export default function Map() {
         </p>
       </div>
       
-      <div style={{display: 'flex', alignItems: 'flex-start', gap: '20px', flexWrap: 'wrap'}}>
-        <div className="content-container" style={{flex: 1, minHeight: 600, padding: '20px'}}>
+      <div style={{display: 'flex', alignItems: 'stretch', gap: '32px', flexWrap: 'wrap', justifyContent: 'center', margin: '0 auto', maxWidth: '1400px'}}>
+        <div className="content-container" style={{flex: 1, minWidth: 350, minHeight: 600, maxWidth: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0}}>
           {loading && <div style={{textAlign: 'center', padding: '40px', color: '#2c3e50'}}>Chargement des points...</div>}
           {error && <div style={{color: 'red', textAlign: 'center'}}>{error}</div>}
           {!loading && !error && (
             <MapContainer 
               center={[-18.8792, 47.5079]} 
               zoom={13} 
-              style={{height: 600, width: '100%', borderRadius: '12px'}}
+              style={{height: 560, width: '100%', borderRadius: '12px'}}
             >
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -134,8 +134,10 @@ export default function Map() {
           )}
         </div>
         
-        <div className="content-container" style={{width: '350px', minHeight: 600, padding: '20px'}}>
-          <DetailsPanel point={selectedPoint} />
+        <div className="content-container" style={{width: 380, minWidth: 320, minHeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0}}>
+          <div style={{width: '100%', height: '100%', padding: 20}}>
+            <DetailsPanel point={selectedPoint} />
+          </div>
         </div>
       </div>
       

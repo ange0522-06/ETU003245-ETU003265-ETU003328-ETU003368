@@ -16,12 +16,18 @@ export default function Sidebar() {
       { path: "/auth", icon: "🔐", label: "LOGIN" },
       { path: "/tana", icon: "🗺️", label: "TANA OFFLINE" }
     ];
+  } else if (profile === "manager") {
+    menuItems = [
+      { path: "/", icon: "🏠", label: "HOME" },
+      { path: "/map", icon: "🗺️", label: "MAP" },
+      { path: "/manager", icon: "👨‍💼", label: "MANAGER" },
+      { path: "/unblock-users", icon: "🔓", label: "DEBLOQUER" },
+      { path: "/auth", icon: "🔐", label: "LOGIN" },
+    ];
   } else {
     menuItems = [
       { path: "/", icon: "🏠", label: "HOME" },
       { path: "/map", icon: "🗺️", label: "MAP" },
-      { path: "/dashboard", icon: "📊", label: "DASHBOARD" },
-      { path: "/manager", icon: "👨‍💼", label: "MANAGER" },
       { path: "/auth", icon: "🔐", label: "LOGIN" },
     ];
   }

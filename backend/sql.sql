@@ -84,8 +84,7 @@ alter table signalement add FOREIGN KEY ON id_photo;
 ---
 ---------------------Nampiana--------------
 
-INSERT INTO users (email, password, role, locked, failed_attempts)
-VALUES ('manager@email.com', '$2a$10$9dxcPHsi9d7TXsii8jjzHedSLP3XSVt6Un4LEnqx3QW7nbXZFBrlO', 'manager', false, 0);
+INSERT INTO users (email, password, role, locked, failed_attempts) VALUES ('manager@email.com', '1234', 'manager', false, 0);
 
 INSERT INTO signalement (budget, date_signalement, description, entreprise, latitude, longitude, statut, surface_m2, titre, id_user)
 VALUES
@@ -97,6 +96,10 @@ VALUES
   (9500, '2026-01-26 13:00:00', 'Problème de drainage', 'Vinci', -18.8880, 47.5080, 'nouveau', 9, 'Drainage', 6),
   (20000, '2026-01-27 08:30:00', 'Route barrée', 'Colas', -18.8920, 47.5120, 'termine', 25, 'Route barrée', 7);
 
+
+UPDATE users 
+SET failed_attempts = 0, locked = false 
+WHERE email = 'manager@email.com';
 
 
 DOCKERISATION-tEST

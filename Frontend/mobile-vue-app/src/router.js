@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import LoginPage from './LoginPage.vue';
 import MapPage from './MapPage.vue';
+import MyReportsPage from './MyReportsPage.vue';
 import { auth } from './firebase';
 
 const routes = [
@@ -14,6 +15,12 @@ const routes = [
     path: '/map',
     name: 'Map',
     component: MapPage,
+    meta: { requiresAuth: true }
+  }
+  ,{
+    path: '/my-reports',
+    name: 'MyReports',
+    component: MyReportsPage,
     meta: { requiresAuth: true }
   }
 ];
