@@ -106,9 +106,6 @@ export default function Dashboard() {
       </div>
 
       <div className="content-container">
-        {/* Tableau récapitulatif déplacé ici */}
-        <RecapTable points={points} />
-
         {stats && (
           <div className="stats-grid">
             <div className="stat-card">
