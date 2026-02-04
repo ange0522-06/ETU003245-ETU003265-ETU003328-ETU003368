@@ -74,6 +74,14 @@ CREATE TABLE synchronisation (
     type VARCHAR(20) CHECK (type IN ('IMPORT', 'EXPORT')),
     statut VARCHAR(20) CHECK (statut IN ('SUCCES', 'ECHEC'))
 );
+
+CREATE TABLE photo (
+    id SERIAL PRIMARY KEY,
+    nom TEXT NOT NULL
+);
+alter table signalement add column id_photo int;
+alter table signalement add FOREIGN KEY ON id_photo;
+---
 ---------------------Nampiana--------------
 
 INSERT INTO users (email, password, role, locked, failed_attempts)
