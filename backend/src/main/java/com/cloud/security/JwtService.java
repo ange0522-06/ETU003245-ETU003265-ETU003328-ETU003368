@@ -1,4 +1,3 @@
-
 package com.cloud.security;
 
 import io.jsonwebtoken.Claims;
@@ -16,62 +15,55 @@ import io.jsonwebtoken.SignatureAlgorithm;
 @Service
 public class JwtService {
 
-    private static final String SECRET =
-            "super-secret-key-super-secret-key-super-secret-key";
-    private static final long EXPIRATION = 1000 * 60 * 60; // 1 heure
+    // Shared secret used for signing and verification - must be the same
+    private static final String SECRET = "super-secret-key-super-secret-key-super-secret-key";
+    private static final long EXPIRATION_MS = 24L * 60 * 60 * 1000; // 24h
 
-    private final String SECRET_KEY = "mysecretkeymysecretkeymysecretkey";
-
-    // ✅ BON TYPE
-    private SecretKey getKey() {
+    private java.security.Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET.getBytes());
     }
-
-    // public String generateToken(String username) {
-    //     return Jwts.builder()
-    //             .subject(username)
-    //             .issuedAt(new Date())
-    //             .expiration(new Date(System.currentTimeMillis() + EXPIRATION))
-    //             .signWith(getKey())
-    //             .compact();
-    // }
 
     public String generateToken(String username, String role) {
         return Jwts.builder()
                 .setSubject(username)
                 .claim("role", role)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000))
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-
     public String extractUsername(String token) {
-        return getClaims(token).getSubject();
+        Claims claims = getClaims(token);
+        return claims == null ? null : claims.getSubject();
     }
 
     public boolean isTokenValid(String token) {
-        return !getClaims(token).getExpiration().before(new Date());
+        try {
+            Claims claims = getClaims(token);
+            return claims != null && claims.getExpiration().after(new Date());
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private Claims getClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getKey()) // ✅ maintenant OK
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            return Jwts.parser()
+                    .setSigningKey(getSigningKey())
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
-    private Key getSigningKey() {
-        // Transforme ta clé secrète en clé HMAC
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
-    }
-        // Ajoute cette méthode pour extraire le rôle du token
+    // Ajoute cette méthode pour extraire le rôle du token
     public String extractRole(String token) {
         Claims claims = getClaims(token);
+        if (claims == null) return null;
         Object roleObj = claims.get("role");
-        return roleObj != null ? roleObj.toString() : "user";
+        return roleObj != null ? roleObj.toString() : null;
     }
 
 }

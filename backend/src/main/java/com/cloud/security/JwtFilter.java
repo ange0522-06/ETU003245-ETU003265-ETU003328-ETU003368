@@ -50,15 +50,17 @@ public class JwtFilter extends OncePerRequestFilter {
                 String username = jwtService.extractUsername(token);
                 String role = jwtService.extractRole(token);
                 System.out.println("[JWT] Rôle extrait du token : " + role); // DEBUG
-                java.util.List<org.springframework.security.core.GrantedAuthority> authorities = java.util.List.of(
-                    new org.springframework.security.core.authority.SimpleGrantedAuthority(role)
-                );
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(username, null, authorities);
-                auth.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                if (username != null && role != null) {
+                    java.util.List<org.springframework.security.core.GrantedAuthority> authorities = java.util.List.of(
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority(role)
+                    );
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(username, null, authorities);
+                    auth.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
             }
         } catch (Exception e) {
             // Token invalide : ignorer et continuer sans authentifier

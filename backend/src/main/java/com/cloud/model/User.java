@@ -1,5 +1,6 @@
 package com.cloud.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -48,6 +49,13 @@ public class User {
     public boolean isLocked() {
         return locked;
     }
+
+        
+    @JsonProperty("blocked")
+    public boolean getBlocked() {
+        return locked;
+    }
+    
     public void setLocked(boolean locked) {
         this.locked = locked;
     }

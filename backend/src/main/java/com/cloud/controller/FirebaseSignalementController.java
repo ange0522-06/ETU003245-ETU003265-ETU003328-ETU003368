@@ -31,8 +31,15 @@ public class FirebaseSignalementController {
 
     // 2. Récupérer tous les signalements depuis Firestore
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> getAllFromFirebase() {
-        List<Map<String, Object>> signalements = fireStoreService.getAllSignalementsFromFirestore();
-        return ResponseEntity.ok(signalements);
+    public ResponseEntity<?> getAllFromFirebase() {
+        try {
+            List<Map<String, Object>> signalements = fireStoreService.getAllSignalementsFromFirestore();
+            return ResponseEntity.ok(signalements);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
     }
 }
