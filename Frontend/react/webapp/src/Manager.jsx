@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, updateSignalementApi } from "./api";
+import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, updateSignalementApi } from "./api";
 import { useProfile } from "./ProfileContext";
 import { useNavigate } from "react-router-dom";
 
@@ -10,63 +10,7 @@ export default function Manager() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [syncing, setSyncing] = useState(false);
   const token = localStorage.getItem("token");
-
-  // Synchronisation Firebase - Exporter vers Firebase
-  const handleSyncToFirebase = async () => {
-    if (!token) {
-      alert("Token d'authentification manquant. Veuillez vous reconnecter.");
-      return;
-    }
-
-    setSyncing(true);
-    setError("");
-    try {
-      const result = await syncSignalementsToFirebase(token);
-      const count = result.exportedCount || result.totalSignalements || 0;
-      alert(`✅ ${count} signalement(s) exporté(s) vers Firebase avec succès !`);
-    } catch (err) {
-      setError(err.message || "Erreur lors de la synchronisation vers Firebase");
-    } finally {
-      setSyncing(false);
-    }
-  };
-
-  // Synchronisation Firebase - Récupérer depuis Firebase
-  const handleGetFromFirebase = async () => {
-    if (!token) {
-      alert("Token d'authentification manquant. Veuillez vous reconnecter.");
-      return;
-    }
-
-    setSyncing(true);
-    setError("");
-    try {
-      const sig = await getSignalementsFromFirebase(token);
-
-      const mapped = sig.map((s) => ({
-        id: s.idSignalement || s.id,
-        status: s.statut || s.status,
-        date: s.dateSignalement ? s.dateSignalement.split("T")[0] : s.date || "",
-        surface: s.surfaceM2 || s.surface,
-        budget: s.budget,
-        entreprise: s.entreprise,
-        titre: s.titre,
-        latitude: s.latitude,
-        longitude: s.longitude,
-        description: s.description,
-        id_user: s.id_user
-      }));
-
-      setSignalements(mapped);
-      alert(`✅ ${mapped.length} signalement(s) récupéré(s) depuis Firebase !`);
-    } catch (err) {
-      setError(err.message || "Erreur lors de la récupération depuis Firebase");
-    } finally {
-      setSyncing(false);
-    }
-  };
 
   useEffect(() => {
     async function fetchData() {
@@ -215,42 +159,6 @@ export default function Manager() {
         <div style={{display: 'flex', gap: '16px', marginBottom: 24}}>
           {profile === "manager" && (
             <>
-              <button 
-                onClick={handleSyncToFirebase} 
-                disabled={syncing}
-                style={{
-                  background: syncing ? '#9e9e9e' : '#4caf50', 
-                  color: 'white', 
-                  padding: '10px 18px', 
-                  borderRadius: 6, 
-                  border: 'none', 
-                  fontWeight: 600, 
-                  cursor: syncing ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                {syncing ? '⏳ Synchronisation...' : '⬆️ Synchroniser vers Firebase (Mobile)'}
-              </button>
-              <button 
-                onClick={handleGetFromFirebase} 
-                disabled={syncing}
-                style={{
-                  background: syncing ? '#9e9e9e' : '#2196f3', 
-                  color: 'white', 
-                  padding: '10px 18px', 
-                  borderRadius: 6, 
-                  border: 'none', 
-                  fontWeight: 600, 
-                  cursor: syncing ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                {syncing ? '⏳ Chargement...' : '⬇️ Récupérer depuis Firebase'}
-              </button>
               <button 
                 onClick={handleNavigateToCreateUser}
                 style={{

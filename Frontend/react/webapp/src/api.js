@@ -265,40 +265,6 @@ export async function updateSignalementStatusApi(signalementId, newStatus, token
   return await res.json();
 }
 
-// Synchronisation Firebase (Manager)
-export async function syncSignalementsToFirebase(token) {
-  const headers = token ? { "Authorization": `Bearer ${token}` } : {};
-  let res;
-  try {
-    res = await fetch(`${API_URL}/firebase/signalements/sync`, {
-      method: "POST",
-      headers
-    });
-  } catch (e) {
-    throw new Error("Impossible de joindre le backend pour la synchronisation: " + e.message);
-  }
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`Erreur ${res.status} lors de la synchronisation vers Firebase${txt ? ': ' + txt : ''}`);
-  }
-  return await res.json();
-}
-
-export async function getSignalementsFromFirebase(token) {
-  const headers = token ? { "Authorization": `Bearer ${token}` } : {};
-  let res;
-  try {
-    res = await fetch(`${API_URL}/firebase/signalements`, { headers });
-  } catch (e) {
-    throw new Error("Impossible de joindre le backend pour récupérer depuis Firebase: " + e.message);
-  }
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`Erreur ${res.status} lors de la récupération depuis Firebase${txt ? ': ' + txt : ''}`);
-  }
-  return await res.json();
-}
-
 // Fonction pour tester l'authentification
 export async function testAuthAndRole(token) {
   if (!token) {
