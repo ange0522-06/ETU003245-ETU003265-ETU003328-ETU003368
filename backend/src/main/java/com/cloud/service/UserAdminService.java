@@ -23,4 +23,14 @@ public class UserAdminService {
 
         userRepository.save(user);
     }
+
+    public void lockUser(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setLocked(true);
+
+        userRepository.save(user);
+    }
 }

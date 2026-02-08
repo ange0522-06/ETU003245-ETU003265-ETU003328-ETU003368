@@ -79,7 +79,12 @@ export async function getSignalementsApi(token) {
     latitude: s.latitude,
     longitude: s.longitude,
     description: s.description,
-    id_user: s.utilisateur ? s.utilisateur.id : s.id_user
+    id_user: s.utilisateur ? s.utilisateur.id : s.id_user,
+    // Ajouter les dates d'étapes
+    dateNouveau: s.dateNouveau,
+    dateEnCours: s.dateEnCours,
+    dateTermine: s.dateTermine,
+    avancement: s.avancement
   }));
 }
 
@@ -89,6 +94,16 @@ export async function getStatsApi(token) {
     headers
   });
   if (!res.ok) throw new Error("Erreur lors de la récupération des stats");
+  return await res.json();
+}
+
+// Récupérer les statistiques de traitement moyen
+export async function getTraitementStatsApi(token) {
+  const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+  const res = await fetch(`${API_URL}/stats/traitement`, {
+    headers
+  });
+  if (!res.ok) throw new Error("Erreur lors de la récupération des statistiques de traitement");
   return await res.json();
 }
 
@@ -103,35 +118,43 @@ export async function getUsersApi(token) {
   return await res.json();
 }
 
-// Bloquer un utilisateur
+// Bloquer un utilisateur (Note: Si le backend n'a pas cet endpoint, il faudra l'ajouter)
 export async function blockUserApi(userId, token) {
-  const res = await fetch(`${API_URL}/users/${userId}/block`, {
-    method: "POST",
+  const res = await fetch(`${API_URL}/admin/users/${userId}/lock`, {
+    method: "PUT",
     headers: { "Authorization": `Bearer ${token}` }
   });
-  if (!res.ok) throw new Error("Erreur lors du blocage de l'utilisateur");
-  return await res.json();
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || "Erreur lors du blocage de l'utilisateur");
+  }
+  // Le backend retourne du texte, pas du JSON
+  return await res.text();
 }
 
 // Débloquer un utilisateur
 export async function unblockUserApi(userId, token) {
-  const res = await fetch(`${API_URL}/users/${userId}/unblock`, {
-    method: "POST",
+  const res = await fetch(`${API_URL}/admin/users/${userId}/unlock`, {
+    method: "PUT",
     headers: { "Authorization": `Bearer ${token}` }
   });
-  if (!res.ok) throw new Error("Erreur lors du déblocage de l'utilisateur");
-  return await res.json();
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || "Erreur lors du déblocage de l'utilisateur");
+  }
+  // Le backend retourne du texte, pas du JSON
+  return await res.text();
 }
 
 // Modifier le statut d'un signalement
 export async function updateSignalementStatusApi(signalementId, newStatus, token) {
-  const res = await fetch(`${API_URL}/signalements/${signalementId}/status`, {
+  const res = await fetch(`${API_URL}/signalements/${signalementId}`, {
     method: "PUT",
     headers: {
       "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ status: newStatus })
+    body: JSON.stringify({ statut: newStatus })
   });
   if (!res.ok) throw new Error("Erreur lors de la modification du statut");
   return await res.json();
@@ -149,4 +172,77 @@ export async function updateSignalementApi(signalementId, updates, token) {
   });
   if (!res.ok) throw new Error("Erreur lors de la mise à jour du signalement");
   return await res.json();
+}
+
+// Debug - Vérifier les informations du token
+export async function getTokenInfoApi(token) {
+  const res = await fetch(`${API_URL}/debug/token-info`, {
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Erreur lors de la récupération des infos du token");
+  return await res.json();
+}
+
+// ========== API Photos ==========
+
+// Récupérer toutes les photos d'un signalement
+export async function getPhotosApi(signalementId) {
+  const res = await fetch(`${API_URL}/signalements/${signalementId}/photos`);
+  if (!res.ok) throw new Error("Erreur lors de la récupération des photos");
+  return await res.json();
+}
+
+// Uploader une photo pour un signalement
+export async function uploadPhotoApi(signalementId, file, token) {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const res = await fetch(`${API_URL}/signalements/${signalementId}/photos`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${token}` },
+    body: formData
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Erreur lors de l'upload de la photo");
+  }
+  return await res.json();
+}
+
+// Ajouter une photo par URL (pour Firebase)
+export async function addPhotoByUrlApi(signalementId, url, token) {
+  const res = await fetch(`${API_URL}/signalements/${signalementId}/photos/url`, {
+    method: "POST",
+    headers: { 
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ url })
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Erreur lors de l'ajout de la photo");
+  }
+  return await res.json();
+}
+
+// Supprimer une photo
+export async function deletePhotoApi(signalementId, photoId, token) {
+  const res = await fetch(`${API_URL}/signalements/${signalementId}/photos/${photoId}`, {
+    method: "DELETE",
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Erreur lors de la suppression de la photo");
+  }
+  return await res.json();
+}
+
+// Compter les photos d'un signalement
+export async function countPhotosApi(signalementId) {
+  const res = await fetch(`${API_URL}/signalements/${signalementId}/photos/count`);
+  if (!res.ok) throw new Error("Erreur lors du comptage des photos");
+  const data = await res.json();
+  return data.count;
 }

@@ -75,12 +75,14 @@ CREATE TABLE synchronisation (
     statut VARCHAR(20) CHECK (statut IN ('SUCCES', 'ECHEC'))
 );
 
-CREATE TABLE photo (
-    id SERIAL PRIMARY KEY,
-    nom TEXT NOT NULL
-);
-alter table signalement add column id_photo int;
-alter table signalement add FOREIGN KEY ON id_photo;
+-- CREATE TABLE photo (
+--     id SERIAL PRIMARY KEY,
+--     nom TEXT NOT NULL
+-- );
+-- alter table signalement add column id_photo int;
+-- alter table signalement add FOREIGN KEY ON id_photo;
+
+
 ---
 ---------------------Nampiana--------------
 
@@ -119,3 +121,35 @@ PS C:\Users\Fenitra\AppData\Local\Android\Sdk\platform-tools>
  s'il y a erreur '               
 PS C:\Users\Fenitra\AppData\Local\Android\Sdk\platform-tools> .\adb.exe kill-server 
 PS C:\Users\Fenitra\AppData\Local\Android\Sdk\platform-tools> .\adb.exe start-server  
+
+
+-------------------------Nampiana-Ange--------------------------
+
+-- ================================
+-- AJOUT DES COLONNES POUR LES DATES D'ÉTAPES
+-- ================================
+-- Ajouter les colonnes pour tracker les dates de chaque étape d'avancement
+ALTER TABLE signalement ADD COLUMN IF NOT EXISTS date_nouveau TIMESTAMP;
+ALTER TABLE signalement ADD COLUMN IF NOT EXISTS date_en_cours TIMESTAMP;
+ALTER TABLE signalement ADD COLUMN IF NOT EXISTS date_termine TIMESTAMP;
+
+-- Initialiser date_nouveau avec date_signalement pour les enregistrements existants
+UPDATE signalement SET date_nouveau = date_signalement WHERE date_nouveau IS NULL;
+
+-- ================================
+-- TABLE : photo_signalement
+-- ================================
+-- Table pour stocker plusieurs photos par signalement
+CREATE TABLE IF NOT EXISTS photo_signalement (
+    id_photo SERIAL PRIMARY KEY,
+    id_signalement INTEGER NOT NULL,
+    url_photo TEXT NOT NULL,
+    date_ajout TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_photo_signalement
+        FOREIGN KEY (id_signalement)
+        REFERENCES signalement (id_signalement)
+        ON DELETE CASCADE
+);
+
+-- Index pour améliorer les performances de recherche
+CREATE INDEX IF NOT EXISTS idx_photo_signalement ON photo_signalement(id_signalement);

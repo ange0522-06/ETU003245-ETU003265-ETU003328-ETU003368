@@ -18,31 +18,20 @@ public class JwtService {
 
     private static final String SECRET =
             "super-secret-key-super-secret-key-super-secret-key";
-    private static final long EXPIRATION = 1000 * 60 * 60; // 1 heure
+    private static final long EXPIRATION = 86400000; // 24 heures
 
-    private final String SECRET_KEY = "mysecretkeymysecretkeymysecretkey";
-
-    // ✅ BON TYPE
+    // ✅ Utiliser la même clé pour signer ET parser
     private SecretKey getKey() {
         return Keys.hmacShaKeyFor(SECRET.getBytes());
     }
-
-    // public String generateToken(String username) {
-    //     return Jwts.builder()
-    //             .subject(username)
-    //             .issuedAt(new Date())
-    //             .expiration(new Date(System.currentTimeMillis() + EXPIRATION))
-    //             .signWith(getKey())
-    //             .compact();
-    // }
 
     public String generateToken(String username, String role) {
         return Jwts.builder()
                 .setSubject(username)
                 .claim("role", role)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -63,11 +52,7 @@ public class JwtService {
                 .getPayload();
     }
 
-    private Key getSigningKey() {
-        // Transforme ta clé secrète en clé HMAC
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
-    }
-        // Ajoute cette méthode pour extraire le rôle du token
+    // Ajoute cette méthode pour extraire le rôle du token
     public String extractRole(String token) {
         Claims claims = getClaims(token);
         Object roleObj = claims.get("role");
