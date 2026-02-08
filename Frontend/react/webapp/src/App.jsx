@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-route
 import Sidebar from "./Sidebar";
 import Dashboard from "./Dashboard";
 import Manager from "./Manager";
+import Stats from "./Stats";
 import Map from "./Map";
 import Auth from "./Auth";
 import Tana from "./Tana";
@@ -36,7 +37,8 @@ function AppContent() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/manager" element={<Manager />} />
-           <Route path="/unblock-users" element={<UnblockUsers />} />
+          <Route path="/stats" element={<Stats />} />
+          <Route path="/unblock-users" element={<UnblockUsers />} />
           <Route path="/map" element={<Map />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/tana" element={<Tana />} />

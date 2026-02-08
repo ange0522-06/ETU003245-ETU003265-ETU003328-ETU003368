@@ -2,6 +2,7 @@ package com.cloud.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,6 +16,7 @@ import org.springframework.security.config.Customizer;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
@@ -37,17 +39,17 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/signalements",
                                 "/api/signalements/**",
+                                "/uploads/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/api/stats",
                                 "/api/auth/firebase/**",
                                 "/api/firebase/**",
                                 "/api/test/**",
-                                "/api/admin/users/**",
-                                 "/swagger-ui/**",
-                                 "/v3/api-docs/**"
+                                "/api/debug/**"
                 ).permitAll()
+                .requestMatchers("/api/stats/**").hasAuthority("ROLE_MANAGER")
                 .requestMatchers("/api/users/**").hasAuthority("ROLE_MANAGER")
+                .requestMatchers("/api/admin/**").hasAuthority("ROLE_MANAGER")
                 .requestMatchers("/api/manager/**").hasAuthority("ROLE_MANAGER")
                 .anyRequest().authenticated()
             )

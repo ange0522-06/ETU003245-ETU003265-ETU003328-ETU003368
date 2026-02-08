@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, updateSignalementApi } from "./api";
+import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, updateSignalementApi, registerApi } from "./api";
 import { useProfile } from "./ProfileContext";
+import RecapTable from "./RecapTable";
+import PhotoGallery from "./PhotoGallery";
 
 export default function Manager() {
   const { profile } = useProfile();
@@ -9,7 +11,30 @@ export default function Manager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [showPhotos, setShowPhotos] = useState(null); // null ou l'id du signalement
   const token = localStorage.getItem("token");
+
+  // Fonction helper pour calculer l'avancement
+  const calculerAvancement = (status) => {
+    if (!status) return 0;
+    switch (status.toLowerCase()) {
+      case 'nouveau': return 0;
+      case 'en cours': return 50;
+      case 'termine': case 'terminé': return 100;
+      default: return 0;
+    }
+  };
+
+  // Fonction helper pour formater les dates
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
 
   // Synchronisation Firebase - Exporter vers Firebase
   const handleSyncToFirebase = async () => {
@@ -89,6 +114,13 @@ export default function Manager() {
 
   const [editingId, setEditingId] = useState(null);
   const [editFields, setEditFields] = useState({ surface: '', budget: '', entreprise: '', status: '' });
+  
+  // États pour le modal de création d'utilisateur
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('user');
+  const [creatingUser, setCreatingUser] = useState(false);
 
   const startEdit = (s) => {
     setEditingId(s.id);
@@ -129,7 +161,7 @@ export default function Manager() {
     try {
       await unblockUserApi(id, token);
       setUsers(users.map(u =>
-        u.id === id ? { ...u, blocked: false } : u
+        u.id === id ? { ...u, locked: false } : u
       ));
       alert("✅ Utilisateur débloqué !");
     } catch (err) {
@@ -141,11 +173,38 @@ export default function Manager() {
     try {
       await blockUserApi(id, token);
       setUsers(users.map(u =>
-        u.id === id ? { ...u, blocked: true } : u
+        u.id === id ? { ...u, locked: true } : u
       ));
       alert("⛔ Utilisateur bloqué !");
     } catch (err) {
       alert(err.message || "Erreur lors du blocage");
+    }
+  };
+
+  // Créer un nouvel utilisateur
+  const createUser = async () => {
+    if (!newUserEmail || !newUserPassword) {
+      alert("⚠️ Veuillez remplir tous les champs");
+      return;
+    }
+    
+    setCreatingUser(true);
+    try {
+      const result = await registerApi(newUserEmail, newUserPassword, newUserRole);
+      // Recharger la liste des utilisateurs
+      const updatedUsers = await getUsersApi(token);
+      setUsers(updatedUsers);
+      
+      // Réinitialiser le formulaire et fermer le modal
+      setNewUserEmail('');
+      setNewUserPassword('');
+      setNewUserRole('user');
+      setShowCreateUserModal(false);
+      alert(`✅ Utilisateur ${newUserEmail} créé avec succès !`);
+    } catch (err) {
+      alert(err.message || "Erreur lors de la création de l'utilisateur");
+    } finally {
+      setCreatingUser(false);
     }
   };
 
@@ -197,7 +256,7 @@ export default function Manager() {
             </div>
           </div>
         )}
-        <div style={{display: 'flex', gap: '16px', marginBottom: 24}}>
+        <div style={{display: 'flex', gap: '16px', marginBottom: 24, flexWrap: 'wrap'}}>
           {profile === "manager" && (
             <>
               <button 
@@ -237,6 +296,7 @@ export default function Manager() {
                 {syncing ? '⏳ Chargement...' : '⬇️ Récupérer depuis Firebase'}
               </button>
               <button 
+                onClick={() => setShowCreateUserModal(true)}
                 style={{
                   background: '#9c27b0', 
                   color: 'white', 
@@ -255,6 +315,7 @@ export default function Manager() {
             </>
           )}
         </div>
+
         <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#2c3e50'}}>
           📋 Gestion des signalements
         </h2>
@@ -265,9 +326,11 @@ export default function Manager() {
               <tr>
                 <th>📅 Date</th>
                 <th>🔄 Status</th>
+                <th>� Avancement</th>
                 <th>📏 Surface (m²)</th>
                 <th>💰 Budget</th>
                 <th>🏢 Entreprise</th>
+                <th>🕒 Dates étapes</th>
                 <th>⚙️ Actions</th>
               </tr>
             </thead>
@@ -294,6 +357,28 @@ export default function Manager() {
                     }}>
                       {s.status}
                     </span>
+                  </td>
+                  <td>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                      <div style={{
+                        width: '100px',
+                        height: '20px',
+                        background: '#e0e0e0',
+                        borderRadius: '10px',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          width: `${calculerAvancement(s.status)}%`,
+                          height: '100%',
+                          background: s.status === 'termine' ? '#4caf50' : 
+                                     s.status === 'en cours' ? '#ffc107' : '#2196f3',
+                          transition: 'width 0.3s ease'
+                        }}></div>
+                      </div>
+                      <span style={{fontWeight: '600', fontSize: '0.9rem'}}>
+                        {calculerAvancement(s.status)}%
+                      </span>
+                    </div>
                   </td>
                   <td>
                     {editingId === s.id ? (
@@ -332,6 +417,28 @@ export default function Manager() {
                     )}
                   </td>
                   <td>
+                    <div style={{fontSize: '0.85rem', color: '#555'}}>
+                      {s.dateNouveau && (
+                        <div style={{marginBottom: 4}}>
+                          <span style={{fontWeight: '600', color: '#2196f3'}}>🆕 Nouveau:</span> {formatDate(s.dateNouveau)}
+                        </div>
+                      )}
+                      {s.dateEnCours && (
+                        <div style={{marginBottom: 4}}>
+                          <span style={{fontWeight: '600', color: '#ffc107'}}>🔄 En cours:</span> {formatDate(s.dateEnCours)}
+                        </div>
+                      )}
+                      {s.dateTermine && (
+                        <div>
+                          <span style={{fontWeight: '600', color: '#4caf50'}}>✅ Terminé:</span> {formatDate(s.dateTermine)}
+                        </div>
+                      )}
+                      {!s.dateNouveau && !s.dateEnCours && !s.dateTermine && (
+                        <span style={{color: '#999'}}>Aucune date</span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
                     {editingId === s.id ? (
                       <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
                         <select
@@ -365,6 +472,20 @@ export default function Manager() {
                           <option value="termine">✅ Terminé</option>
                         </select>
                         <button onClick={() => startEdit(s)} style={{padding: '6px 10px'}}>✏️ Edit</button>
+                        <button 
+                          onClick={() => setShowPhotos(s.id)} 
+                          style={{
+                            padding: '6px 10px',
+                            background: '#2196f3',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem'
+                          }}
+                        >
+                          📷 Photos
+                        </button>
                       </div>
                     )}
                   </td>
@@ -373,6 +494,11 @@ export default function Manager() {
             </tbody>
           </table>
         </div>
+
+        {/* Tableau de récapitulation */}
+        {signalements.length > 0 && (
+          <RecapTable points={signalements} />
+        )}
 
         <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#2c3e50'}}>
           👥 Gestion des utilisateurs
@@ -403,20 +529,20 @@ export default function Manager() {
                       borderRadius: '20px',
                       fontSize: '0.9rem',
                       fontWeight: '500',
-                      background: u.blocked ? 'rgba(255, 107, 107, 0.2)' : 'rgba(76, 175, 80, 0.2)',
-                      color: u.blocked ? '#ff6b6b' : '#4caf50'
+                      background: u.locked ? 'rgba(255, 107, 107, 0.2)' : 'rgba(76, 175, 80, 0.2)',
+                      color: u.locked ? '#ff6b6b' : '#4caf50'
                     }}>
-                      {u.blocked ? "⛔ Bloqué" : "✅ Actif"}
+                      {u.locked ? "⛔ Bloqué" : "✅ Actif"}
                     </span>
                   </td>
                   <td>
                     <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
                       <span>⏰</span>
-                      {u.lastLogin}
+                      {u.lastLogin || 'N/A'}
                     </div>
                   </td>
                   <td>
-                    {u.blocked ? (
+                    {u.locked ? (
                       <button onClick={() => unblockUser(u.id)} style={{background: 'rgba(76, 175, 80, 0.2)', color: '#4caf50'}}>
                         <span>✅</span>
                         Débloquer
@@ -433,31 +559,190 @@ export default function Manager() {
             </tbody>
           </table>
         </div>
+      </div>
 
-        <div className="card" style={{marginTop: '40px', background: 'rgba(255, 255, 255, 0.9)'}}>
-          <h3 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', color: '#2c3e50'}}>
-            📊 Statistiques rapides
-          </h3>
-          <div style={{display: 'flex', gap: '30px', flexWrap: 'wrap'}}>
-            <div>
-              <div style={{fontSize: '2rem', color: '#4a54e1'}}>{signalements.length}</div>
-              <div style={{color: '#7f8c8d', fontSize: '0.9rem'}}>Signalements</div>
+      {/* Modal de création d'utilisateur */}
+      {showCreateUserModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 12,
+            padding: '30px',
+            maxWidth: 500,
+            width: '90%',
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)'
+          }}>
+            <h2 style={{marginBottom: 20, color: '#2c3e50', display: 'flex', alignItems: 'center', gap: 10}}>
+              <span>👤</span>
+              Créer un nouvel utilisateur
+            </h2>
+            
+            <div style={{marginBottom: 20}}>
+              <label style={{display: 'block', marginBottom: 8, color: '#555', fontWeight: 500}}>
+                📧 Email
+              </label>
+              <input
+                type="email"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                placeholder="exemple@email.com"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: 6,
+                  border: '2px solid #ddd',
+                  fontSize: '1rem'
+                }}
+              />
             </div>
-            <div>
-              <div style={{fontSize: '2rem', color: '#00b894'}}>
-                {users.filter(u => !u.blocked).length}
-              </div>
-              <div style={{color: '#7f8c8d', fontSize: '0.9rem'}}>Utilisateurs actifs</div>
+
+            <div style={{marginBottom: 20}}>
+              <label style={{display: 'block', marginBottom: 8, color: '#555', fontWeight: 500}}>
+                🔒 Mot de passe
+              </label>
+              <input
+                type="password"
+                value={newUserPassword}
+                onChange={(e) => setNewUserPassword(e.target.value)}
+                placeholder="Mot de passe sécurisé"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: 6,
+                  border: '2px solid #ddd',
+                  fontSize: '1rem'
+                }}
+              />
             </div>
-            <div>
-              <div style={{fontSize: '2rem', color: '#ffc107'}}>
-                {signalements.filter(s => s.status === 'en cours').length}
-              </div>
-              <div style={{color: '#7f8c8d', fontSize: '0.9rem'}}>En cours</div>
+
+            <div style={{marginBottom: 25}}>
+              <label style={{display: 'block', marginBottom: 8, color: '#555', fontWeight: 500}}>
+                👥 Rôle
+              </label>
+              <select
+                value={newUserRole}
+                onChange={(e) => setNewUserRole(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: 6,
+                  border: '2px solid #ddd',
+                  fontSize: '1rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="user">👤 Utilisateur</option>
+                <option value="manager">👨‍💼 Manager</option>
+              </select>
+            </div>
+
+            <div style={{display: 'flex', gap: 12, justifyContent: 'flex-end'}}>
+              <button
+                onClick={() => {
+                  setShowCreateUserModal(false);
+                  setNewUserEmail('');
+                  setNewUserPassword('');
+                  setNewUserRole('user');
+                }}
+                disabled={creatingUser}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 6,
+                  border: '2px solid #ddd',
+                  background: 'white',
+                  color: '#555',
+                  fontWeight: 600,
+                  cursor: creatingUser ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={createUser}
+                disabled={creatingUser}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 6,
+                  border: 'none',
+                  background: creatingUser ? '#9e9e9e' : '#9c27b0',
+                  color: 'white',
+                  fontWeight: 600,
+                  cursor: creatingUser ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}
+              >
+                {creatingUser ? '⏳ Création...' : '✅ Créer l\'utilisateur'}
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Modal Galerie de Photos */}
+      {showPhotos && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+          }}
+          onClick={() => setShowPhotos(null)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              padding: '20px',
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowPhotos(null)}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                background: '#f44336',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold'
+              }}
+            >
+              ✕ Fermer
+            </button>
+            <h2 style={{marginTop: 0, marginBottom: 20}}>Photos du signalement #{showPhotos}</h2>
+            <PhotoGallery signalementId={showPhotos} canEdit={true} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

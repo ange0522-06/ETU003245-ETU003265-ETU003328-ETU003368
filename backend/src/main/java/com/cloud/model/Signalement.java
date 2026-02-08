@@ -20,6 +20,11 @@ public class Signalement {
     private Double budget;
     private String entreprise;
 
+    // Dates pour chaque étape d'avancement
+    private Timestamp dateNouveau;
+    private Timestamp dateEnCours;
+    private Timestamp dateTermine;
+
     @ManyToOne
     @JoinColumn(name = "id_user")
     private User utilisateur;
@@ -47,4 +52,22 @@ public class Signalement {
     public void setEntreprise(String entreprise) { this.entreprise = entreprise; }
     public User getUtilisateur() { return utilisateur; }
     public void setUtilisateur(User utilisateur) { this.utilisateur = utilisateur; }
+    
+    public Timestamp getDateNouveau() { return dateNouveau; }
+    public void setDateNouveau(Timestamp dateNouveau) { this.dateNouveau = dateNouveau; }
+    public Timestamp getDateEnCours() { return dateEnCours; }
+    public void setDateEnCours(Timestamp dateEnCours) { this.dateEnCours = dateEnCours; }
+    public Timestamp getDateTermine() { return dateTermine; }
+    public void setDateTermine(Timestamp dateTermine) { this.dateTermine = dateTermine; }
+
+    // Calculer l'avancement en pourcentage basé sur le statut
+    public int getAvancement() {
+        if (statut == null) return 0;
+        switch (statut.toLowerCase()) {
+            case "nouveau": return 0;
+            case "en cours": return 50;
+            case "termine": case "terminé": return 100;
+            default: return 0;
+        }
+    }
 }

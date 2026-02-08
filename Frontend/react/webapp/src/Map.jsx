@@ -6,6 +6,8 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { useEffect, useState } from "react";
 import DetailsPanel from "./DetailsPanel";
+import RecapTable from "./RecapTable";
+import PhotoGallery from "./PhotoGallery";
 import { getSignalementsApi } from "./api";
 import { useProfile } from "./ProfileContext";
 
@@ -66,6 +68,7 @@ export default function Map() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedPoint, setSelectedPoint] = useState(null);
+  const [showPhotos, setShowPhotos] = useState(null); // null ou l'id du signalement
   const { profile } = useProfile();
 
   useEffect(() => {
@@ -119,13 +122,32 @@ export default function Map() {
                   }}
                 >
                   <Popup>
-                    <div style={{padding: '10px'}}>
-                      <strong style={{fontSize: '16px'}}>{pt.titre || 'Travaux routier'}</strong><br/>
-                      <span>Status : <b style={{color: getStatusColor(pt.status)}}>{pt.status}</b></span><br/>
-                      <span>Date : {pt.date || '-'} </span><br/>
-                      <span>Surface : {pt.surface || '-'} m²</span><br/>
-                      <span>Budget : {pt.budget || '-'} Ar</span><br/>
-                      <span>Entreprise : {pt.entreprise || '-'}</span>
+                    <div style={{padding: '10px', minWidth: '220px'}}>
+                      <strong style={{fontSize: '16px', display: 'block', marginBottom: '8px'}}>{pt.titre || 'Travaux routier'}</strong>
+                      <div style={{fontSize: '14px', lineHeight: '1.6'}}>
+                        <div><span style={{color: '#666'}}>Status :</span> <b style={{color: getStatusColor(pt.status)}}>{pt.status}</b></div>
+                        <div><span style={{color: '#666'}}>Date :</span> {pt.date || '-'}</div>
+                        <div><span style={{color: '#666'}}>Surface :</span> {pt.surface || '-'} m²</div>
+                        <div><span style={{color: '#666'}}>Budget :</span> {pt.budget ? `${pt.budget.toLocaleString()} Ar` : '-'}</div>
+                        <div><span style={{color: '#666'}}>Entreprise :</span> {pt.entreprise || '-'}</div>
+                        <div style={{marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #eee'}}>
+                          <button
+                            onClick={() => setShowPhotos(pt.id)}
+                            style={{
+                              width: '100%',
+                              padding: '8px',
+                              background: '#2196f3',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '13px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            📷 Voir les photos
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </Popup>
                 </Marker>
@@ -141,7 +163,63 @@ export default function Map() {
         </div>
       </div>
       
-      {/* Tableau récapitulatif déplacé dans Dashboard */}
+      {/* Tableau récapitulatif */}
+      {!loading && !error && points.length > 0 && (
+        <RecapTable points={points} />
+      )}
+
+      {/* Modal Galerie de Photos */}
+      {showPhotos && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+          }}
+          onClick={() => setShowPhotos(null)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              padding: '20px',
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowPhotos(null)}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                background: '#f44336',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold'
+              }}
+            >
+              ✕ Fermer
+            </button>
+            <h2 style={{marginTop: 0, marginBottom: 20}}>Photos du signalement #{showPhotos}</h2>
+            <PhotoGallery signalementId={showPhotos} canEdit={false} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

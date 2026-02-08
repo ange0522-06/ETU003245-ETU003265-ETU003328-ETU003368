@@ -21,6 +21,7 @@ export default function Sidebar() {
       { path: "/", icon: "🏠", label: "HOME" },
       { path: "/map", icon: "🗺️", label: "MAP" },
       { path: "/manager", icon: "👨‍💼", label: "MANAGER" },
+      { path: "/stats", icon: "📊", label: "STATISTIQUES" },
       { path: "/unblock-users", icon: "🔓", label: "DEBLOQUER" },
       { path: "/auth", icon: "🔐", label: "LOGIN" },
     ];
