@@ -1,7 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useProfile } from "./ProfileContext";
 
-
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -16,26 +15,32 @@ export default function Sidebar() {
       { path: "/auth", icon: "🔐", label: "LOGIN" },
       { path: "/tana", icon: "🗺️", label: "TANA OFFLINE" }
     ];
-  } else if (profile === "manager") {
+    } else if (profile === "manager") {
     menuItems = [
-      { path: "/", icon: "🏠", label: "HOME" },
+      { path: "/dashboard", icon: "📊", label: "DASHBOARD" },
       { path: "/map", icon: "🗺️", label: "MAP" },
       { path: "/manager", icon: "👨‍💼", label: "MANAGER" },
+      { path: "/manager-signalements", icon: "📝", label: "SIGNALEMENTS" },
+      { path: "/auth", icon: "➕", label: "CRÉER USER", state: { fromManager: true } },
       { path: "/unblock-users", icon: "🔓", label: "DEBLOQUER" },
-      { path: "/auth", icon: "🔐", label: "LOGIN" },
     ];
-  } else {
+    } else {
     menuItems = [
-      { path: "/", icon: "🏠", label: "HOME" },
+      { path: "/dashboard", icon: "📊", label: "DASHBOARD" },
       { path: "/map", icon: "🗺️", label: "MAP" },
-      { path: "/auth", icon: "🔐", label: "LOGIN" },
     ];
   }
 
   const handleLogout = () => {
     logout();
+    navigate("/dashboard");
+  };
+
+  const handleLogin = () => {
     navigate("/auth");
   };
+
+  const isAuthPage = location.pathname === "/auth";
 
   return (
     <div className="sidebar">
@@ -44,20 +49,22 @@ export default function Sidebar() {
         <h1>LALANA</h1>
       </div>
 
-      {/* Menu principal */}
+      {/* Menu principal - seulement les liens de navigation */}
       <nav className="sidebar-menu">
         {menuItems.map((item) => (
           <Link
-            key={item.path}
-            to={item.path}
-            className={`sidebar-item ${
-              location.pathname === item.path || 
-              (item.path === "/" && location.pathname === "/dashboard") ? "active" : ""
-            }`}
-          >
-            <span className="sidebar-icon">{item.icon}</span>
-            <span className="sidebar-label">{item.label}</span>
-          </Link>
+              key={item.path}
+              to={{
+                pathname: item.path,
+                state: item.state || {}
+              }}
+              className={`sidebar-item ${
+                location.pathname === item.path ? "active" : ""
+              }`}
+            >
+              <span className="sidebar-icon">{item.icon}</span>
+              <span className="sidebar-label">{item.label}</span>
+            </Link>
         ))}
       </nav>
 
@@ -79,7 +86,8 @@ export default function Sidebar() {
           </div>
         </div>
         
-        {profile !== "visiteur" && (
+        {/* Boutons d'action uniquement dans la section profil */}
+        {profile !== "visiteur" ? (
           <button 
             onClick={handleLogout}
             className="logout-btn"
@@ -87,12 +95,45 @@ export default function Sidebar() {
               marginTop: "15px",
               width: "100%",
               background: "#e74c3c",
-              padding: "8px 16px",
-              fontSize: "12px"
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              padding: "10px 16px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
             }}
           >
             <span>🚪</span>
-            Déconnexion
+            Se déconnecter
+          </button>
+        ) : !isAuthPage && (
+          <button 
+            onClick={handleLogin}
+            className="login-btn"
+            style={{
+              marginTop: "15px",
+              width: "100%",
+              background: "#2ecc71",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              padding: "10px 16px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
+          >
+            <span>🔐</span>
+            Se connecter
           </button>
         )}
       </div>

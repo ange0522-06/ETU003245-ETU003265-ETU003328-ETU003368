@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, updateSignalementApi } from "./api";
 import { useProfile } from "./ProfileContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Manager() {
   const { profile } = useProfile();
+  const navigate = useNavigate();
   const [signalements, setSignalements] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,12 +15,17 @@ export default function Manager() {
 
   // Synchronisation Firebase - Exporter vers Firebase
   const handleSyncToFirebase = async () => {
+    if (!token) {
+      alert("Token d'authentification manquant. Veuillez vous reconnecter.");
+      return;
+    }
+
     setSyncing(true);
+    setError("");
     try {
       const result = await syncSignalementsToFirebase(token);
-      setError("");
-      // small success feedback
-      alert(`✅ ${result.exportedCount || 'Tous les'} signalements exportés vers Firebase !`);
+      const count = result.exportedCount || result.totalSignalements || 0;
+      alert(`✅ ${count} signalement(s) exporté(s) vers Firebase avec succès !`);
     } catch (err) {
       setError(err.message || "Erreur lors de la synchronisation vers Firebase");
     } finally {
@@ -28,14 +35,20 @@ export default function Manager() {
 
   // Synchronisation Firebase - Récupérer depuis Firebase
   const handleGetFromFirebase = async () => {
+    if (!token) {
+      alert("Token d'authentification manquant. Veuillez vous reconnecter.");
+      return;
+    }
+
     setSyncing(true);
+    setError("");
     try {
       const sig = await getSignalementsFromFirebase(token);
-      // Mapper les champs Firebase vers le format frontend
-      const mapped = sig.map(s => ({
+
+      const mapped = sig.map((s) => ({
         id: s.idSignalement || s.id,
         status: s.statut || s.status,
-        date: s.dateSignalement ? s.dateSignalement.split('T')[0] : s.date || '',
+        date: s.dateSignalement ? s.dateSignalement.split("T")[0] : s.date || "",
         surface: s.surfaceM2 || s.surface,
         budget: s.budget,
         entreprise: s.entreprise,
@@ -45,11 +58,9 @@ export default function Manager() {
         description: s.description,
         id_user: s.id_user
       }));
+
       setSignalements(mapped);
-      setError("");
-      // keep a small non-blocking confirmation
-      // using alert for quick feedback but not for errors
-      alert(`✅ ${mapped.length} signalements récupérés depuis Firebase !`);
+      alert(`✅ ${mapped.length} signalement(s) récupéré(s) depuis Firebase !`);
     } catch (err) {
       setError(err.message || "Erreur lors de la récupération depuis Firebase");
     } finally {
@@ -149,6 +160,10 @@ export default function Manager() {
     }
   };
 
+  const handleNavigateToCreateUser = () => {
+    navigate("/auth", { state: { fromManager: true } });
+  };
+
   if (profile !== "manager") {
     return (
       <div className="manager-page">
@@ -237,6 +252,7 @@ export default function Manager() {
                 {syncing ? '⏳ Chargement...' : '⬇️ Récupérer depuis Firebase'}
               </button>
               <button 
+                onClick={handleNavigateToCreateUser}
                 style={{
                   background: '#9c27b0', 
                   color: 'white', 

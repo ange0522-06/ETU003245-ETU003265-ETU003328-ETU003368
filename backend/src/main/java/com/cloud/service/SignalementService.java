@@ -22,6 +22,11 @@ public class SignalementService {
         return signalementRepository.save(signalement);
     }
 
+    public void updateStatus(Long id, String newStatus) {
+        Signalement s = signalementRepository.findById(id).orElseThrow();
+        s.setStatut(newStatus);
+        signalementRepository.save(s);
+    }
     public Signalement updateSignalement(Long id, Signalement updated) {
         return signalementRepository.findById(id).map(s -> {
             s.setTitre(updated.getTitre() != null ? updated.getTitre() : s.getTitre());

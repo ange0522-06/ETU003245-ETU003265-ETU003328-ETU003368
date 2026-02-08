@@ -1,3 +1,4 @@
+  
  
 package com.cloud.service;
 
@@ -134,5 +135,8 @@ public class AuthService {
         String springRole = "ROLE_" + user.getRole().toUpperCase();
         String token = jwtService.generateToken(user.getEmail(), springRole);
         return new LoginResult(true, false, 0, token, user.getRole());
+    }
+      public boolean hasManager() {
+        return userRepository.existsByRoleIgnoreCase("ROLE_MANAGER");
     }
 }
