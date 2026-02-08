@@ -4,6 +4,7 @@ import Dashboard from "./Dashboard";
 import Manager from "./Manager";
 import Map from "./Map";
 import Auth from "./Auth";
+import Tana from "./Tana";
 import { ProfileProvider } from "./ProfileContext";
 import "./assets/ui.css";
 
@@ -31,7 +32,8 @@ function AppContent() {
     profile === "visiteur" &&
     location.pathname !== "/dashboard" &&
     location.pathname !== "/map" &&
-    location.pathname !== "/auth"
+    location.pathname !== "/auth" &&
+    location.pathname !== "/tana"
   ) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -94,9 +96,7 @@ function AppContent() {
           
           <Route path="/map" element={<Map />} />
           <Route path="/auth" element={<Auth />} />
-          
-          {/* Route fallback */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/tana" element={<Tana />} />
         </Routes>
       </div>
     </div>

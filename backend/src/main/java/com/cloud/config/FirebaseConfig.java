@@ -17,14 +17,26 @@ public class FirebaseConfig {
 
     @Bean
     public FirebaseApp firebaseApp() {
+        InputStream serviceAccount = null;
         try {
-            InputStream serviceAccount = getClass().getClassLoader().getResourceAsStream(firebaseConfigPath);
+            // Try load from classpath
+            serviceAccount = getClass().getClassLoader().getResourceAsStream(firebaseConfigPath);
             if (serviceAccount == null) {
-                throw new IllegalStateException("Firebase service account file not found: " + firebaseConfigPath);
+                // Try as filesystem path
+                java.io.File f = new java.io.File(firebaseConfigPath);
+                if (f.exists()) {
+                    serviceAccount = new java.io.FileInputStream(f);
+                }
             }
 
+            if (serviceAccount == null) {
+                throw new IllegalStateException("Firebase service account file not found on classpath or filesystem: " + firebaseConfigPath);
+            }
+
+            GoogleCredentials credentials = GoogleCredentials.fromStream(serviceAccount);
+
             FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .setCredentials(credentials)
                     .build();
 
             if (FirebaseApp.getApps().isEmpty()) {
@@ -34,7 +46,12 @@ public class FirebaseConfig {
             return FirebaseApp.getInstance();
 
         } catch (Exception e) {
-            throw new RuntimeException("Erreur initialisation Firebase", e);
+            // Provide a more descriptive error for troubleshooting
+            throw new RuntimeException("Erreur initialisation Firebase - vérifiez le chemin du fichier de service account et les permissions: " + firebaseConfigPath, e);
+        } finally {
+            if (serviceAccount != null) {
+                try { serviceAccount.close(); } catch (Exception ignored) {}
+            }
         }
     }
 }

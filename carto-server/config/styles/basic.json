@@ -1,0 +1,29 @@
+{
+  "version": 8,
+  "name": "Antananarivo",
+  "sources": {
+    "osm": {
+      "type": "vector",
+      "url": "mbtiles://antananarivo"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#f2efe9"
+      }
+    },
+    {
+      "id": "roads",
+      "type": "line",
+      "source": "osm",
+      "source-layer": "transportation",
+      "paint": {
+        "line-color": "#d14",
+        "line-width": 1
+      }
+    }
+  ]  
+}

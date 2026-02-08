@@ -12,6 +12,8 @@ export default function Sidebar() {
     menuItems = [
       { path: "/dashboard", icon: "📊", label: "DASHBOARD" },
       { path: "/map", icon: "🗺️", label: "MAP" },
+      { path: "/auth", icon: "🔐", label: "LOGIN" },
+      { path: "/tana", icon: "🗺️", label: "TANA OFFLINE" }
     ];
     } else if (profile === "manager") {
     menuItems = [
