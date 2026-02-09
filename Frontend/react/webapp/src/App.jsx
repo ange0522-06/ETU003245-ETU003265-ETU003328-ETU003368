@@ -10,6 +10,7 @@ import { ProfileProvider } from "./ProfileContext";
 import "./assets/ui.css";
 
 import UnblockUsers from "./UnblockUsers";
+import CreateUser from "./CreateUser";
 
 import { useProfile } from "./ProfileContext";
 
@@ -39,6 +40,7 @@ function AppContent() {
           <Route path="/manager" element={<Manager />} />
           <Route path="/stats" element={<Stats />} />
           <Route path="/unblock-users" element={<UnblockUsers />} />
+          <Route path="/create-user" element={<CreateUser />} />
           <Route path="/map" element={<Map />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/tana" element={<Tana />} />

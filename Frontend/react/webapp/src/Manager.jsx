@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getSignalementsApi, getUsersApi, blockUserApi, unblockUserApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, updateSignalementApi, registerApi } from "./api";
+import { getSignalementsApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, updateSignalementApi } from "./api";
 import { useProfile } from "./ProfileContext";
 import RecapTable from "./RecapTable";
 import PhotoGallery from "./PhotoGallery";
@@ -7,7 +7,6 @@ import PhotoGallery from "./PhotoGallery";
 export default function Manager() {
   const { profile } = useProfile();
   const [signalements, setSignalements] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [syncing, setSyncing] = useState(false);
@@ -90,8 +89,6 @@ export default function Manager() {
         if (!token) throw new Error("Utilisateur non authentifié");
         const sig = await getSignalementsApi(token);
         setSignalements(sig);
-        const us = await getUsersApi(token);
-        setUsers(us);
       } catch (err) {
         setError(err.message || "Erreur lors du chargement des données");
       } finally {
@@ -114,13 +111,6 @@ export default function Manager() {
 
   const [editingId, setEditingId] = useState(null);
   const [editFields, setEditFields] = useState({ surface: '', budget: '', entreprise: '', status: '' });
-  
-  // États pour le modal de création d'utilisateur
-  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserPassword, setNewUserPassword] = useState('');
-  const [newUserRole, setNewUserRole] = useState('user');
-  const [creatingUser, setCreatingUser] = useState(false);
 
   const startEdit = (s) => {
     setEditingId(s.id);
@@ -157,56 +147,7 @@ export default function Manager() {
     }
   };
 
-  const unblockUser = async (id) => {
-    try {
-      await unblockUserApi(id, token);
-      setUsers(users.map(u =>
-        u.id === id ? { ...u, locked: false } : u
-      ));
-      alert("✅ Utilisateur débloqué !");
-    } catch (err) {
-      alert(err.message || "Erreur lors du déblocage");
-    }
-  };
 
-  const blockUser = async (id) => {
-    try {
-      await blockUserApi(id, token);
-      setUsers(users.map(u =>
-        u.id === id ? { ...u, locked: true } : u
-      ));
-      alert("⛔ Utilisateur bloqué !");
-    } catch (err) {
-      alert(err.message || "Erreur lors du blocage");
-    }
-  };
-
-  // Créer un nouvel utilisateur
-  const createUser = async () => {
-    if (!newUserEmail || !newUserPassword) {
-      alert("⚠️ Veuillez remplir tous les champs");
-      return;
-    }
-    
-    setCreatingUser(true);
-    try {
-      const result = await registerApi(newUserEmail, newUserPassword, newUserRole);
-      // Recharger la liste des utilisateurs
-      const updatedUsers = await getUsersApi(token);
-      setUsers(updatedUsers);
-      
-      // Réinitialiser le formulaire et fermer le modal
-      setNewUserEmail('');
-      setNewUserPassword('');
-      setNewUserRole('user');
-      setShowCreateUserModal(false);
-      alert(`✅ Utilisateur ${newUserEmail} créé avec succès !`);
-    } catch (err) {
-      alert(err.message || "Erreur lors de la création de l'utilisateur");
-    } finally {
-      setCreatingUser(false);
-    }
-  };
 
   if (profile !== "manager") {
     return (
@@ -294,23 +235,6 @@ export default function Manager() {
                 }}
               >
                 {syncing ? '⏳ Chargement...' : '⬇️ Récupérer depuis Firebase'}
-              </button>
-              <button 
-                onClick={() => setShowCreateUserModal(true)}
-                style={{
-                  background: '#9c27b0', 
-                  color: 'white', 
-                  padding: '10px 18px', 
-                  borderRadius: 6, 
-                  border: 'none', 
-                  fontWeight: 600, 
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <span>➕</span> Créer un utilisateur
               </button>
             </>
           )}
@@ -462,7 +386,7 @@ export default function Manager() {
                             minWidth: '140px',
                             padding: '8px 12px',
                             borderRadius: '6px',
-                            border: '2px solid #ddd',
+                            border: 'none',
                             backgroundColor: 'white',
                             cursor: 'pointer'
                           }}
@@ -499,197 +423,7 @@ export default function Manager() {
         {signalements.length > 0 && (
           <RecapTable points={signalements} />
         )}
-
-        <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#2c3e50'}}>
-          👥 Gestion des utilisateurs
-        </h2>
-        
-        <div style={{overflowX: 'auto'}}>
-          <table>
-            <thead>
-              <tr>
-                <th>📧 Email</th>
-                <th>🔄 Statut</th>
-                <th>📅 Dernière connexion</th>
-                <th>⚡ Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u.id}>
-                  <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                      <span>{u.email.includes('manager') ? '👨‍💼' : '👤'}</span>
-                      {u.email}
-                    </div>
-                  </td>
-                  <td>
-                    <span style={{
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      fontSize: '0.9rem',
-                      fontWeight: '500',
-                      background: u.locked ? 'rgba(255, 107, 107, 0.2)' : 'rgba(76, 175, 80, 0.2)',
-                      color: u.locked ? '#ff6b6b' : '#4caf50'
-                    }}>
-                      {u.locked ? "⛔ Bloqué" : "✅ Actif"}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-                      <span>⏰</span>
-                      {u.lastLogin || 'N/A'}
-                    </div>
-                  </td>
-                  <td>
-                    {u.locked ? (
-                      <button onClick={() => unblockUser(u.id)} style={{background: 'rgba(76, 175, 80, 0.2)', color: '#4caf50'}}>
-                        <span>✅</span>
-                        Débloquer
-                      </button>
-                    ) : (
-                      <button onClick={() => blockUser(u.id)} style={{background: 'rgba(255, 107, 107, 0.2)', color: '#ff6b6b'}}>
-                        <span>⛔</span>
-                        Bloquer
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </div>
-
-      {/* Modal de création d'utilisateur */}
-      {showCreateUserModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: 12,
-            padding: '30px',
-            maxWidth: 500,
-            width: '90%',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)'
-          }}>
-            <h2 style={{marginBottom: 20, color: '#2c3e50', display: 'flex', alignItems: 'center', gap: 10}}>
-              <span>👤</span>
-              Créer un nouvel utilisateur
-            </h2>
-            
-            <div style={{marginBottom: 20}}>
-              <label style={{display: 'block', marginBottom: 8, color: '#555', fontWeight: 500}}>
-                📧 Email
-              </label>
-              <input
-                type="email"
-                value={newUserEmail}
-                onChange={(e) => setNewUserEmail(e.target.value)}
-                placeholder="exemple@email.com"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: 6,
-                  border: '2px solid #ddd',
-                  fontSize: '1rem'
-                }}
-              />
-            </div>
-
-            <div style={{marginBottom: 20}}>
-              <label style={{display: 'block', marginBottom: 8, color: '#555', fontWeight: 500}}>
-                🔒 Mot de passe
-              </label>
-              <input
-                type="password"
-                value={newUserPassword}
-                onChange={(e) => setNewUserPassword(e.target.value)}
-                placeholder="Mot de passe sécurisé"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: 6,
-                  border: '2px solid #ddd',
-                  fontSize: '1rem'
-                }}
-              />
-            </div>
-
-            <div style={{marginBottom: 25}}>
-              <label style={{display: 'block', marginBottom: 8, color: '#555', fontWeight: 500}}>
-                👥 Rôle
-              </label>
-              <select
-                value={newUserRole}
-                onChange={(e) => setNewUserRole(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: 6,
-                  border: '2px solid #ddd',
-                  fontSize: '1rem',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="user">👤 Utilisateur</option>
-                <option value="manager">👨‍💼 Manager</option>
-              </select>
-            </div>
-
-            <div style={{display: 'flex', gap: 12, justifyContent: 'flex-end'}}>
-              <button
-                onClick={() => {
-                  setShowCreateUserModal(false);
-                  setNewUserEmail('');
-                  setNewUserPassword('');
-                  setNewUserRole('user');
-                }}
-                disabled={creatingUser}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: 6,
-                  border: '2px solid #ddd',
-                  background: 'white',
-                  color: '#555',
-                  fontWeight: 600,
-                  cursor: creatingUser ? 'not-allowed' : 'pointer'
-                }}
-              >
-                Annuler
-              </button>
-              <button
-                onClick={createUser}
-                disabled={creatingUser}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: 6,
-                  border: 'none',
-                  background: creatingUser ? '#9e9e9e' : '#9c27b0',
-                  color: 'white',
-                  fontWeight: 600,
-                  cursor: creatingUser ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8
-                }}
-              >
-                {creatingUser ? '⏳ Création...' : '✅ Créer l\'utilisateur'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal Galerie de Photos */}
       {showPhotos && (

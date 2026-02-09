@@ -23,6 +23,7 @@ export default function Sidebar() {
       { path: "/manager", icon: "👨‍💼", label: "MANAGER" },
       { path: "/stats", icon: "📊", label: "STATISTIQUES" },
       { path: "/unblock-users", icon: "🔓", label: "DEBLOQUER" },
+      { path: "/create-user", icon: "➕", label: "CRÉER UTILISATEUR" },
       { path: "/auth", icon: "🔐", label: "LOGIN" },
     ];
   } else {
