@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import TopBar from "./TopBar";
 import Dashboard from "./Dashboard";
 import Manager from "./Manager";
 import Stats from "./Stats";
@@ -34,6 +35,7 @@ function AppContent() {
     <div className="app-container">
       {!isAuthPage && <Sidebar />}
       <div className="main-content-area">
+        {!isAuthPage && <TopBar />}
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />

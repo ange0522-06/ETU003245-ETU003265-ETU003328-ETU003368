@@ -18,8 +18,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/test")
 @RequiredArgsConstructor
-@Slf4j
 public class FirebaseTestController {
+    
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(FirebaseTestController.class);
     
     private final FirebaseAuthService firebaseAuthService;
     private final FireStoreService firestoreService;

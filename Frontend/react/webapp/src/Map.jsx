@@ -89,7 +89,7 @@ export default function Map() {
     <div className="map-page">
       <div className="page-header">
         <h1 className="page-title">
-          🗺️ Carte des travaux
+          Carte des travaux
         </h1>
         <p className="page-subtitle">
           Visualisation géographique des points de travaux en cours et planifiés

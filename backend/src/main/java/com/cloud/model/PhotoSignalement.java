@@ -13,7 +13,7 @@ public class PhotoSignalement {
     private Long idPhoto;
 
     @Column(name = "id_signalement", nullable = false)
-    private Long idSignalement;
+    private String idSignalement;
 
     @Column(name = "url_photo", nullable = false, columnDefinition = "TEXT")
     private String urlPhoto;
@@ -21,17 +21,17 @@ public class PhotoSignalement {
     @Column(name = "date_ajout")
     private Timestamp dateAjout;
 
-    // Relation ManyToOne optionnelle vers Signalement
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_signalement", insertable = false, updatable = false)
-    private Signalement signalement;
+    // Relation ManyToOne optionnelle vers Signalement - commentée car incompatible avec Firebase String IDs
+    // @ManyToOne(fetch = FetchType.LAZY)
+    // @JoinColumn(name = "id_signalement", insertable = false, updatable = false)
+    // private Signalement signalement;
 
     // Constructeurs
     public PhotoSignalement() {
         this.dateAjout = new Timestamp(System.currentTimeMillis());
     }
 
-    public PhotoSignalement(Long idSignalement, String urlPhoto) {
+    public PhotoSignalement(String idSignalement, String urlPhoto) {
         this.idSignalement = idSignalement;
         this.urlPhoto = urlPhoto;
         this.dateAjout = new Timestamp(System.currentTimeMillis());
@@ -46,11 +46,11 @@ public class PhotoSignalement {
         this.idPhoto = idPhoto;
     }
 
-    public Long getIdSignalement() {
+    public String getIdSignalement() {
         return idSignalement;
     }
 
-    public void setIdSignalement(Long idSignalement) {
+    public void setIdSignalement(String idSignalement) {
         this.idSignalement = idSignalement;
     }
 
@@ -70,11 +70,12 @@ public class PhotoSignalement {
         this.dateAjout = dateAjout;
     }
 
-    public Signalement getSignalement() {
-        return signalement;
-    }
+    // Getters/setters pour la relation Signalement - commentés car incompatibles avec Firebase String IDs
+    // public Signalement getSignalement() {
+    //     return signalement;
+    // }
 
-    public void setSignalement(Signalement signalement) {
-        this.signalement = signalement;
-    }
+    // public void setSignalement(Signalement signalement) {
+    //     this.signalement = signalement;
+    // }
 }

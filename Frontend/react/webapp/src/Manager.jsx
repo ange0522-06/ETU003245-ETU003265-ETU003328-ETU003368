@@ -179,7 +179,7 @@ export default function Manager() {
     <div className="manager-page">
       <div className="page-header">
         <h1 className="page-title">
-          👨‍💼 Espace Manager
+          Espace Manager
         </h1>
         <p className="page-subtitle">
           Gestion des signalements et administration des utilisateurs

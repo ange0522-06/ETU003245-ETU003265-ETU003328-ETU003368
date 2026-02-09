@@ -87,7 +87,7 @@ export default function CreateUser() {
     <div className="manager-page">
       <div className="page-header">
         <h1 className="page-title">
-          👤 Créer un utilisateur
+          Créer un utilisateur
         </h1>
         <p className="page-subtitle">
           Ajouter un nouvel utilisateur au système
