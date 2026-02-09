@@ -89,22 +89,22 @@ export default function Map() {
     <div className="map-page">
       <div className="page-header">
         <h1 className="page-title">
-          🗺️ Carte des travaux
+          Carte des travaux
         </h1>
         <p className="page-subtitle">
           Visualisation géographique des points de travaux en cours et planifiés
         </p>
       </div>
       
-      <div style={{display: 'flex', alignItems: 'stretch', gap: '32px', flexWrap: 'wrap', justifyContent: 'center', margin: '0 auto', maxWidth: '1400px'}}>
-        <div className="content-container" style={{flex: 1, minWidth: 350, minHeight: 600, maxWidth: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0}}>
+      <div style={{display: 'flex', alignItems: 'flex-start', gap: '20px', width: '100%'}}>
+        <div className="content-container" style={{flex: 3, minHeight: 700, display: 'flex', alignItems: 'stretch', justifyContent: 'center', padding: 0}}>
           {loading && <div style={{textAlign: 'center', padding: '40px', color: '#2c3e50'}}>Chargement des points...</div>}
           {error && <div style={{color: 'red', textAlign: 'center'}}>{error}</div>}
           {!loading && !error && (
             <MapContainer 
               center={[-18.8792, 47.5079]} 
               zoom={13} 
-              style={{height: 560, width: '100%', borderRadius: '12px'}}
+              style={{height: '100%', width: '100%', borderRadius: '12px'}}
             >
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -130,7 +130,7 @@ export default function Map() {
                         <div><span style={{color: '#666'}}>Surface :</span> {pt.surface || '-'} m²</div>
                         <div><span style={{color: '#666'}}>Budget :</span> {pt.budget ? `${pt.budget.toLocaleString()} Ar` : '-'}</div>
                         <div><span style={{color: '#666'}}>Entreprise :</span> {pt.entreprise || '-'}</div>
-                        <div style={{marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #eee'}}>
+                        <div style={{marginTop: '8px', paddingTop: '8px', borderTop: 'none'}}>
                           <button
                             onClick={() => setShowPhotos(pt.id)}
                             style={{
@@ -156,11 +156,13 @@ export default function Map() {
           )}
         </div>
         
-        <div className="content-container" style={{width: 380, minWidth: 320, minHeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0}}>
-          <div style={{width: '100%', height: '100%', padding: 20}}>
-            <DetailsPanel point={selectedPoint} />
+        {selectedPoint && (
+          <div className="content-container" style={{flex: 1, minHeight: 700, display: 'flex', alignItems: 'stretch', justifyContent: 'center', padding: 0, overflow: 'auto'}}>
+            <div style={{width: '100%', height: '100%', padding: 20}}>
+              <DetailsPanel point={selectedPoint} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
       
       {/* Tableau récapitulatif */}

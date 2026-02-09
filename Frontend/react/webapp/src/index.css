@@ -103,7 +103,7 @@ button:focus-visible {
   justify-content: center;
   background: #fffbe6;
   border-radius: 16px;
-  box-shadow: 0 2px 16px #ffe082;
+  box-shadow: none;
   margin: 0 32px 32px 32px;
   min-height: 600px;
 }
@@ -112,7 +112,7 @@ button:focus-visible {
   width: 100%;
   height: 80vh !important;
   border-radius: 16px;
-  box-shadow: 0 2px 16px #ffe082;
+  box-shadow: none;
 }
 
 /* Détails à droite */
@@ -120,10 +120,10 @@ button:focus-visible {
   min-width: 350px;
   max-width: 400px;
   background: #fffde7;
-  border-left: 4px solid #ffc107;
+  border-left: none;
   padding: 32px 24px;
   color: #222;
-  box-shadow: 0 2px 16px #ffe082;
+  box-shadow: none;
   height: 80vh;
   border-radius: 0 16px 16px 0;
 }
@@ -132,7 +132,7 @@ button:focus-visible {
 .RecapTable {
   background: #fffde7;
   border-radius: 16px;
-  box-shadow: 0 2px 16px #ffe082;
+  box-shadow: none;
   padding: 24px;
   margin: 32px auto;
   max-width: 700px;

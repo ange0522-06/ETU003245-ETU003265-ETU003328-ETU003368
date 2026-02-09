@@ -13,10 +13,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/firebase/signalements")
-@RequiredArgsConstructor
 public class FirebaseSignalementController {
     private final FireStoreService fireStoreService;
     private final SignalementService signalementService;
+    
+    public FirebaseSignalementController(FireStoreService fireStoreService, SignalementService signalementService) {
+        this.fireStoreService = fireStoreService;
+        this.signalementService = signalementService;
+    }
 
     // 1. Exporter tous les signalements SQL vers Firestore
     @PostMapping("/sync")

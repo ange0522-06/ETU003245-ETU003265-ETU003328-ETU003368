@@ -37,7 +37,7 @@ public class PhotoSignalementService {
     /**
      * Récupère toutes les photos d'un signalement
      */
-    public List<PhotoSignalement> getPhotosBySignalement(Long idSignalement) {
+    public List<PhotoSignalement> getPhotosBySignalement(String idSignalement) {
         return photoRepository.findByIdSignalement(idSignalement);
     }
 
@@ -45,7 +45,7 @@ public class PhotoSignalementService {
      * Ajoute une photo pour un signalement (upload fichier)
      */
     @Transactional
-    public PhotoSignalement addPhoto(Long idSignalement, MultipartFile file) throws IOException {
+    public PhotoSignalement addPhoto(String idSignalement, MultipartFile file) throws IOException {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Le fichier est vide");
         }
@@ -73,7 +73,7 @@ public class PhotoSignalementService {
      * Ajoute une photo avec URL directe (pour import Firebase)
      */
     @Transactional
-    public PhotoSignalement addPhotoByUrl(Long idSignalement, String urlPhoto) {
+    public PhotoSignalement addPhotoByUrl(String idSignalement, String urlPhoto) {
         PhotoSignalement photo = new PhotoSignalement();
         photo.setIdSignalement(idSignalement);
         photo.setUrlPhoto(urlPhoto);
@@ -107,7 +107,7 @@ public class PhotoSignalementService {
      * Supprime toutes les photos d'un signalement
      */
     @Transactional
-    public void deleteAllPhotosBySignalement(Long idSignalement) {
+    public void deleteAllPhotosBySignalement(String idSignalement) {
         List<PhotoSignalement> photos = photoRepository.findByIdSignalement(idSignalement);
         
         // Supprimer les fichiers physiques
@@ -129,7 +129,7 @@ public class PhotoSignalementService {
     /**
      * Compte le nombre de photos pour un signalement
      */
-    public long countPhotos(Long idSignalement) {
+    public long countPhotos(String idSignalement) {
         return photoRepository.countByIdSignalement(idSignalement);
     }
 }

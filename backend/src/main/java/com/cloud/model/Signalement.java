@@ -7,8 +7,8 @@ import java.sql.Timestamp;
 @Table(name = "signalement")
 public class Signalement {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idSignalement;
+    @Column(name = "id_signalement")
+    private String idSignalement;
 
     private String titre;
     private String description;
@@ -30,8 +30,8 @@ public class Signalement {
     private User utilisateur;
 
     // Getters et setters
-    public Long getIdSignalement() { return idSignalement; }
-    public void setIdSignalement(Long idSignalement) { this.idSignalement = idSignalement; }
+    public String getIdSignalement() { return idSignalement; }
+    public void setIdSignalement(String idSignalement) { this.idSignalement = idSignalement; }
     public String getTitre() { return titre; }
     public void setTitre(String titre) { this.titre = titre; }
     public String getDescription() { return description; }

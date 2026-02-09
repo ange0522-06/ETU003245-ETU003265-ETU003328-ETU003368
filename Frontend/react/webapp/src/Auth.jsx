@@ -1,15 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useProfile } from "./ProfileContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { loginApi, registerApi } from "./api";
 import roadLogo from "./assets/1.jpg";
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode');
+  const [isLogin, setIsLogin] = useState(mode !== 'signup');
+  
+  useEffect(() => {
+    if (mode === 'signup') {
+      setIsLogin(false);
+    } else {
+      setIsLogin(true);
+    }
+  }, [mode]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [role, setRole] = useState("user");
+  const [role] = useState("manager");
   const { login } = useProfile();
   const navigate = useNavigate();
 
@@ -57,6 +67,9 @@ export default function Auth() {
       } else if (err.message && err.message.toLowerCase().includes("failed attempts")) {
         setFailedInfo(err.message);
         setError("Attention : " + err.message);
+      } else if (isLogin && (err.message?.includes("not found") || err.message?.includes("Invalid credentials"))) {
+        // Si tentative de connexion échoue, suggérer de créer un compte manager
+        setError(err.message + " - Si aucun manager n'existe encore, veuillez créer un compte manager d'abord.");
       } else {
         setError(err.message || "Erreur lors de l'authentification");
       }
@@ -70,10 +83,10 @@ export default function Auth() {
         <div className="auth-form-container">
           <div className="auth-welcome">
             <h1 className="welcome-title">
-              {isLogin ? "Welcome back 👋" : "Créer un compte 🎉"}
+              {isLogin ? "Bienvenue 👋" : "Créer un compte Manager 👨‍💼"}
             </h1>
             <p className="welcome-subtitle">
-              {isLogin ? "Please enter your details." : "Remplissez les informations ci-dessous."}
+              {isLogin ? "Veuillez entrer vos informations." : "Créez votre compte administrateur pour gérer la plateforme."}
             </p>
           </div>
 
@@ -107,7 +120,7 @@ export default function Auth() {
             </div>
             
             <div className="form-field">
-              <label className="field-label">Password</label>
+              <label className="field-label">Mot de passe</label>
               <div className="input-container">
                 <span className="input-prefix-icon"></span>
                 <input
@@ -123,7 +136,7 @@ export default function Auth() {
             
             {!isLogin && (
               <div className="form-field">
-                <label className="field-label">Confirm Password</label>
+                <label className="field-label">Confirmer le mot de passe</label>
                 <div className="input-container">
                   <span className="input-prefix-icon"></span>
                   <input
@@ -139,19 +152,17 @@ export default function Auth() {
             )}
             
             {!isLogin && (
-              <div className="form-field">
-                <label className="field-label">Rôle</label>
-                <div className="input-container">
-                  <span className="input-prefix-icon">👤</span>
-                  <select 
-                    value={role} 
-                    onChange={e => setRole(e.target.value)} 
-                    className="modern-input"
-                  >
-                    <option value="user">Utilisateur</option>
-                    <option value="manager">Manager</option>
-                  </select>
-                </div>
+              <div className="manager-info-box" style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '13px',
+                marginBottom: '15px',
+                textAlign: 'center',
+                fontWeight: '500'
+              }}>
+                👨‍💼 Vous créez un compte <strong>Manager</strong> avec tous les privilèges d'administration
               </div>
             )}
 
@@ -159,26 +170,26 @@ export default function Auth() {
               <div className="form-options">
                 <label className="remember-checkbox">
                   <input type="checkbox" />
-                  <span>Remember for 30 days</span>
+                  <span>Se souvenir pendant 30 jours</span>
                 </label>
-                <a href="#" className="forgot-link">Forgot password?</a>
+                <a href="#" className="forgot-link">Mot de passe oubli\u00e9?</a>
               </div>
             )}
             
             <button type="submit" className="modern-submit-btn">
-              {isLogin ? "Log in" : "Sign up"}
+              {isLogin ? "Se connecter" : "S'inscrire"}
             </button>
           </form>
           
           <div className="auth-footer">
             <p className="footer-text">
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              {isLogin ? "Aucun manager n'existe encore? " : "Vous avez déjà un compte? "}
               <button 
                 onClick={() => setIsLogin(!isLogin)} 
                 className="footer-link"
                 type="button"
               >
-                {isLogin ? "Sign up" : "Log in"}
+                {isLogin ? "Créer un compte Manager" : "Se connecter"}
               </button>
             </p>
           </div>

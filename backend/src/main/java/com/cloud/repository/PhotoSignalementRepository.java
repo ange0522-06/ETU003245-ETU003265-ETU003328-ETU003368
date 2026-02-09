@@ -12,15 +12,15 @@ public interface PhotoSignalementRepository extends JpaRepository<PhotoSignaleme
     /**
      * Récupère toutes les photos d'un signalement donné
      */
-    List<PhotoSignalement> findByIdSignalement(Long idSignalement);
+    List<PhotoSignalement> findByIdSignalement(String idSignalement);
     
     /**
      * Supprime toutes les photos d'un signalement
      */
-    void deleteByIdSignalement(Long idSignalement);
+    void deleteByIdSignalement(String idSignalement);
     
     /**
      * Compte le nombre de photos pour un signalement
      */
-    long countByIdSignalement(Long idSignalement);
+    long countByIdSignalement(String idSignalement);
 }

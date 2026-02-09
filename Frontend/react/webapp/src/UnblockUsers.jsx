@@ -48,7 +48,7 @@ export default function UnblockUsers() {
     <div className="manager-page">
       <div className="page-header">
         <h1 className="page-title">
-          🔓 Débloquer les utilisateurs
+          Débloquer les utilisateurs
         </h1>
         <p className="page-subtitle">
           Gérez les utilisateurs qui ont été bloqués suite à plusieurs tentatives de connexion échouées

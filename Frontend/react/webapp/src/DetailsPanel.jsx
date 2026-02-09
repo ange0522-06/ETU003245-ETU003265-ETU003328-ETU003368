@@ -24,10 +24,10 @@ export default function DetailsPanel({ point }) {
   
   return (
     <>
-      <div style={{padding: 24, minWidth: 320, maxWidth: 400, background: '#fafaff', borderLeft: '1px solid #eee', height: '100%', overflow: 'auto'}}>
+      <div style={{padding: 24, minWidth: 320, maxWidth: 400, background: '#fafaff', borderLeft: 'none', height: '100%', overflow: 'auto'}}>
         <h3 style={{marginBottom: 16, color: '#2c3e50', fontSize: '20px'}}>{point.titre || 'Travaux routier'}</h3>
         <ul style={{listStyle: 'none', padding: 0, fontSize: 15, lineHeight: '2'}}>
-          <li style={{padding: '8px 0', borderBottom: '1px solid #f0f0f0'}}>
+          <li style={{padding: '8px 0', borderBottom: 'none'}}>
             <span style={{color: '#666'}}>Status :</span>{' '}
             <span style={{
               color: getStatusColor(point.status), 
@@ -39,24 +39,24 @@ export default function DetailsPanel({ point }) {
               {point.status}
             </span>
           </li>
-          <li style={{padding: '8px 0', borderBottom: '1px solid #f0f0f0'}}>
+          <li style={{padding: '8px 0', borderBottom: 'none'}}>
             <span style={{color: '#666'}}>Date :</span> <b>{point.date || '-'}</b>
           </li>
-          <li style={{padding: '8px 0', borderBottom: '1px solid #f0f0f0'}}>
+          <li style={{padding: '8px 0', borderBottom: 'none'}}>
             <span style={{color: '#666'}}>Surface :</span> <b>{point.surface || '-'} m²</b>
           </li>
-          <li style={{padding: '8px 0', borderBottom: '1px solid #f0f0f0'}}>
+          <li style={{padding: '8px 0', borderBottom: 'none'}}>
             <span style={{color: '#666'}}>Budget :</span> <b>{point.budget ? `${point.budget.toLocaleString()} Ar` : '-'}</b>
           </li>
-          <li style={{padding: '8px 0', borderBottom: '1px solid #f0f0f0'}}>
+          <li style={{padding: '8px 0', borderBottom: 'none'}}>
             <span style={{color: '#666'}}>Entreprise :</span> <b>{point.entreprise || '-'}</b>
           </li>
-          <li style={{padding: '8px 0', borderBottom: '1px solid #f0f0f0'}}>
+          <li style={{padding: '8px 0', borderBottom: 'none'}}>
             <span style={{color: '#666'}}>Coordonnées :</span> <span style={{fontSize: '13px', color: '#888'}}>[{point.latitude.toFixed(4)}, {point.longitude.toFixed(4)}]</span>
           </li>
         </ul>
         
-        <div style={{marginTop: '24px', paddingTop: '16px', borderTop: '2px solid #eee'}}>
+        <div style={{marginTop: '24px', paddingTop: '16px', borderTop: 'none'}}>
           <button
             onClick={() => setShowPhotos(true)}
             style={{
