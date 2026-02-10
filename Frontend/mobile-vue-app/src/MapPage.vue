@@ -1,54 +1,49 @@
  <template>
-  <div class="map-page">
-    <div class="page-header">
-      <h1 class="page-title">🗺️ Signalement des problèmes routiers</h1>
-      <p class="page-subtitle">Cliquez sur la carte pour signaler un problème ou visualisez les signalements existants</p>
-      <div v-if="!loading" style="margin-top: 12px; padding: 8px 16px; background: #d4edda; border-radius: 6px; text-align: center">
-        <strong>📍 {{ filteredPoints.length }}</strong> signalement(s) sur la carte
-        <span v-if="filteredPoints.length < points.length" style="margin-left: 8px; color: #856404">
-          (⚠️ {{ points.length - filteredPoints.length }} sans coordonnées GPS)
-        </span>
-      </div>
-    </div>
-
-    <div class="controls">
-      <div class="control-buttons">
-        <button
-          :class="['btn', reportMode ? 'btn-active' : 'btn-secondary']"
-          @click="toggleReportMode"
-        >
-          {{ reportMode ? '✋ Mode signalement actif' : '📍 Signaler un problème' }}
-        </button>
-        <div class="dropdown-container">
-          <button
-            :class="['btn', showUserReportsModal ? 'btn-active' : 'btn-secondary']"
-            @click="openMyReports"
-          >
-            👤 Mes signalements ▼
-          </button>
+  <ion-page>
+    <ion-content :fullscreen="true" class="map-content">
+      <!-- Top Navigation -->
+      <div class="top-navigation">
+        <div class="nav-container">
+          <div class="logo-section">
+            <ion-icon name="car-sport" class="app-logo"></ion-icon>
+            <span class="app-name">RoadSignal</span>
+          </div>
+          /\
+          <nav class="nav-menu">
+            <a href="#" class="nav-link" @click="goToHome">Accueil</a>
+            <a href="#" class="nav-link" @click="goToMyReports">Mes signalements</a>
+            <a href="#" class="nav-link active" @click="goToMap">Carte</a>
+            <a href="#" class="nav-link notification-link" @click="goToNotifications">
+              <div class="notification-icon">
+                <ion-icon name="notifications"></ion-icon>
+                <span v-if="notificationCount > 0" class="notification-badge">{{ notificationCount }}</span>
+              </div>
+            </a>
+          </nav>
+          
+          <div class="header-actions">
+            <div class="user-info">
+              <span class="greeting">{{ getTimeGreeting() }}, {{ userName }}</span>
+            </div>
+            <div class="user-menu" @click="goToProfile">
+              <div class="user-avatar">
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <!-- Icône de notifications -->
-        <NotificationIcon />
-      </div>
-      <div v-if="reportMode" class="report-instructions">
-        <p>📍 Cliquez sur la carte à l'emplacement du problème pour créer un signalement</p>
       </div>
 
-      
-    </div>
-
-    <div style="display: flex; align-items: flex-start; gap: '20px'; flex-wrap: wrap;">
-      <div class="content-container" style="flex: 1; min-height: 600px; padding: '20px'">
-        <div v-if="loading" style="text-align: center; padding: '40px'; color: '#2c3e50'">
-          Chargement des signalements...
+      <!-- Map Section -->
+      <div class="map-wrapper">
+        <div v-if="loading" class="loading-state">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Chargement...</p>
         </div>
-        <div v-if="error" style="color: red; text-align: center">{{ error }}</div>
-        <div v-if="authDebug.lastError" style="color: orange; text-align: center">Debug: {{ authDebug.lastError.code }} — {{ authDebug.lastError.message }}</div>
-          <div v-if="!loading && !error" style="height: 520px; width: 100%; border-radius: '12px'">
+        <div v-if="error" class="error-state">{{ error }}</div>
+        <div v-if="!loading && !error" class="map-container">
           <l-map
             ref="mapRef"
-            style="height: 100%; width: 100%; border-radius: 12px; cursor: pointer;"
+            style="height: 100%; width: 100%;"
             :zoom="13"
             :center="position"
             @click="handleMapClick"
@@ -60,17 +55,26 @@
               :lat-lng="[point.latitude, point.longitude]"
               :icon="createCustomIcon(getStatusColor(point.status))"
               @click="selectPoint(point)"
-              @mouseover="openPopup"
-              @mouseout="closePopup"
+              @mouseover="showTooltip(point, $event)"
+              @mouseout="hideTooltip"
             >
               <l-popup>
-                <div style="padding: '10px'">
-                  <strong style="font-size: '16px'">{{ point.titre || 'Problème routier' }}</strong><br/>
-                  <span>Status : <b :style="{color: getStatusColor(point.status)}">{{ point.status }}</b></span><br/>
-                  <span>Type : {{ point.type || 'Non spécifié' }}</span><br/>
-                  <span>Description : {{ point.description || '-' }}</span><br/>
-                  <span>Date : {{ point.date || '-' }} </span><br/>
-                  <span v-if="point.userId">Signalé par : {{ point.userName || 'Utilisateur' }}</span>
+                <div class="popup-content">
+                  <strong>{{ point.titre || 'Problème routier' }}</strong><br/>
+                  <span>Status: <b :style="{color: getStatusColor(point.status)}">{{ point.status }}</b></span><br/>
+                  <span>Type: {{ point.type || 'Non spécifié' }}</span><br/>
+                  <div v-if="point.photos && point.photos.length > 0" class="popup-photos">
+                    <div class="photos-gallery">
+                      <img 
+                        v-for="(photo, index) in point.photos.slice(0, 3)"
+                        :key="index"
+                        :src="photo"
+                        class="popup-photo"
+                        @click="showPhotoModal(point.photos, index)"
+                      />
+                      <span v-if="point.photos.length > 3" class="more-photos">+{{ point.photos.length - 3}}</span>
+                    </div>
+                  </div>
                 </div>
               </l-popup>
             </l-marker>
@@ -78,25 +82,58 @@
         </div>
       </div>
 
-      <div class="content-container" style="width: '350px'; min-height: 600px; padding: '20px'">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px">
-              <h3 style="margin:0; font-size:1.05rem; color:#2c3e50">Détails du point</h3>
-              <div>
-                <!-- Button removed per request; recap visible below -->
+      <!-- Report Mode Toggle -->
+      <div class="report-toggle" v-if="!showReportModal">
+        <button
+          :class="['toggle-btn', { active: reportMode }]"
+          @click="toggleReportMode"
+        >
+          <ion-icon :name="reportMode ? 'close' : 'add-circle'"></ion-icon>
+          {{ reportMode ? 'Annuler' : 'Nouveau signalement' }}
+        </button>
+      </div>
+
+      <div v-if="reportMode && !showReportModal" class="report-hint">
+        <ion-icon name="location"></ion-icon>
+        Touchez la carte pour signaler un problème
+      </div>
+
+      <!-- Selected Point Details -->
+      <div v-if="selectedPoint && !showReportModal" class="selected-point-card">
+        <div class="point-header">
+          <h3>{{ selectedPoint.titre || 'Signalement' }}</h3>
+          <span :class="['status-badge', getStatusClass(selectedPoint.status)]">
+            {{ selectedPoint.status }}
+          </span>
+        </div>
+        <div class="point-details">
+          <p><strong>Type:</strong> {{ selectedPoint.type || 'Non spécifié' }}</p>
+          <p><strong>Date:</strong> {{ selectedPoint.date || '-' }}</p>
+          <p v-if="selectedPoint.description"><strong>Description:</strong> {{ selectedPoint.description }}</p>
+          <div v-if="selectedPoint.photos && selectedPoint.photos.length > 0" class="point-photos">
+            <p><strong>Photos:</strong></p>
+            <div class="photos-grid">
+              <img 
+                v-for="(photo, index) in selectedPoint.photos.slice(0, 4)"
+                :key="index"
+                :src="photo"
+                class="point-photo"
+                @click="showPhotoModal(selectedPoint.photos, index)"
+              />
+              <div v-if="selectedPoint.photos.length > 4" class="more-photos-badge" @click="showPhotoModal(selectedPoint.photos, 0)">
+                +{{ selectedPoint.photos.length - 4}} photos
               </div>
             </div>
-
-              <DetailsPanel :point="selectedPoint" @delete-point="deletePoint" />
+          </div>
+        </div>
+        <button class="close-details" @click="selectedPoint = null">
+          <ion-icon name="close"></ion-icon>
+        </button>
       </div>
-    </div>
 
-    <div class="recap-section" style="margin-top: 24px; padding-bottom: 40px">
-      <RecapTable :points="filteredPoints" />
-    </div>
-
-    <!-- Report Modal -->
-    <div v-if="showReportModal" class="modal-overlay" @click="closeReportModal">
-      <div class="modal-content" @click.stop>
+      <!-- Report Modal -->
+      <div v-if="showReportModal" class="modal-overlay" @click="closeReportModal">
+        <div class="modal-content" @click.stop>
         <h3>Signaler un problème routier</h3>
         <form @submit.prevent="submitReport">
           <div class="form-group">
@@ -144,6 +181,33 @@
             </select>
           </div>
 
+          <div class="form-group">
+            <label>Photos (optionnel)</label>
+            <div class="photos-section">
+              <div class="photo-actions">
+                <button type="button" class="btn-photo" @click="addPhoto">
+                  📷 Ajouter une photo
+                </button>
+                <input 
+                  ref="photoInput" 
+                  type="file" 
+                  accept="image/*" 
+                  capture="environment"
+                  @change="onFileSelected"
+                  style="display: none"
+                  multiple
+                />
+              </div>
+              <div v-if="reportPhotos.length > 0" class="photos-grid">
+                <div v-for="(photo, index) in reportPhotos" :key="index" class="photo-item">
+                  <img :src="photo" alt="Photo signalement" class="photo-thumb" />
+                  <button type="button" class="btn-remove-photo" @click="removePhoto(index)">×</button>
+                </div>
+              </div>
+              <p class="photo-hint">Max 5 photos - {{ reportPhotos.length }}/5 • Images auto-compressées</p>
+            </div>
+          </div>
+
           <div class="coordinates-display">
             <small>📍 Position: {{ newReport.latitude.toFixed(6) }}, {{ newReport.longitude.toFixed(6) }}</small>
           </div>
@@ -158,6 +222,51 @@
       </div>
     </div>
 
+    <!-- Tooltip pour survol -->
+    <div v-if="hoveredPoint" class="map-tooltip" :style="tooltipStyle">
+      <div class="tooltip-content">
+        <h4>{{ hoveredPoint.titre }}</h4>
+        <p><span class="status-indicator" :style="{backgroundColor: getStatusColor(hoveredPoint.status)}"></span>{{ hoveredPoint.status }}</p>
+        <div v-if="hoveredPoint.photos && hoveredPoint.photos.length > 0" class="tooltip-photos">
+          <div class="photo-preview">
+            <img 
+              v-for="(photo, index) in hoveredPoint.photos.slice(0, 2)"
+              :key="index"
+              :src="photo"
+              class="tooltip-photo"
+            />
+            <div v-if="hoveredPoint.photos.length > 2" class="more-indicator">+{{ hoveredPoint.photos.length - 2}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Photo Gallery -->
+    <div v-if="showPhotoGallery" class="photo-modal-overlay" @click="closePhotoModal">
+      <div class="photo-modal" @click.stop>
+        <div class="photo-modal-header">
+          <h3>Photos du signalement</h3>
+          <button @click="closePhotoModal" class="btn-close-modal">
+            <ion-icon name="close"></ion-icon>
+          </button>
+        </div>
+        <div class="photo-modal-content">
+          <div class="photo-main">
+            <img :src="currentPhoto" class="main-photo" />
+          </div>
+          <div v-if="galleryPhotos.length > 1" class="photo-thumbnails">
+            <img 
+              v-for="(photo, index) in galleryPhotos"
+              :key="index"
+              :src="photo"
+              :class="['thumb', { active: index === currentPhotoIndex }]"
+              @click="currentPhotoIndex = index"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- User Reports Modal -->
     <UserReportsModal
       :show="showUserReportsModal"
@@ -165,12 +274,16 @@
       :current-user-id="currentUser ? currentUser.id : ''"
       @close="closeUserReportsModal"
     />
-  </div>
+
+    <!-- Bottom Navigation -->
+    </ion-content>
+  </ion-page>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, onBeforeUnmount, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import { IonPage, IonContent, IonIcon, IonSpinner } from '@ionic/vue';
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -181,7 +294,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 import DetailsPanel from './components/DetailsPanel.vue';
 import RecapTable from './components/RecapTable.vue';
 import UserReportsModal from './components/UserReportsModal.vue';
-import NotificationIcon from './components/NotificationIcon.vue';
 import { notificationService } from './services/notificationService.js';
 
 // Fix for default markers
@@ -206,48 +318,39 @@ const reportMode = ref(false);
 const showUserReportsModal = ref(false);
 const showReportModal = ref(false);
 const submittingReport = ref(false);
+const reportPhotos = ref([]);
+const photoInput = ref(null);
 const newReport = ref({
   latitude: 0,
   longitude: 0,
   type: '',
   titre: '',
   description: '',
-  urgence: 'moyen'
+  urgence: 'moyen',
+  photos: []
 });
+
+// Variables pour tooltip et galerie photos
+const hoveredPoint = ref(null);
+const tooltipStyle = ref({});
+const showPhotoGallery = ref(false);
+const galleryPhotos = ref([]);
+const currentPhotoIndex = ref(0);
+const currentPhoto = computed(() => galleryPhotos.value[currentPhotoIndex.value]);
 
 // Utilisateur courant (lié à Firebase Auth)
 const currentUser = ref(null);
 const authDebug = ref({ uid: null, logged: false, lastError: null });
+const notificationCount = ref(0);
 
-const filteredPoints = computed(() => {
-  // Filtrer uniquement les signalements avec coordonnées GPS valides
-  const validPoints = points.value.filter(p => 
-    p.latitude && p.longitude && 
-    !isNaN(p.latitude) && !isNaN(p.longitude) &&
-    p.latitude !== 0 && p.longitude !== 0
-  );
-  
-  // Décaler légèrement les marqueurs qui ont les mêmes coordonnées
-  return validPoints.map((point, index) => {
-    const duplicates = validPoints.filter(p => 
-      Math.abs(p.latitude - point.latitude) < 0.00001 && 
-      Math.abs(p.longitude - point.longitude) < 0.00001
-    );
-    
-    if (duplicates.length > 1) {
-      const dupIndex = duplicates.findIndex(p => p.id === point.id);
-      // Décalage en cercle autour du point original
-      const angle = (dupIndex * 360 / duplicates.length) * (Math.PI / 180);
-      const offset = 0.0005; // ~50m de décalage
-      return {
-        ...point,
-        latitude: point.latitude + (offset * Math.sin(angle)),
-        longitude: point.longitude + (offset * Math.cos(angle))
-      };
-    }
-    return point;
-  });
+const userName = computed(() => {
+  if (currentUser.value) {
+    return currentUser.value.name || currentUser.value.email?.split('@')[0] || 'Utilisateur';
+  }
+  return 'Utilisateur';
 });
+
+const filteredPoints = computed(() => points.value);
 
 // Anchor for scrolling to the recap section
 // recap anchor and scroll removed — recap is visible by default
@@ -266,6 +369,43 @@ const getStatusColor = (status) => {
     case 'nouveau': return '#2196f3';
     default: return '#9e9e9e';
   }
+};
+
+const getStatusClass = (status) => {
+  switch(status) {
+    case 'termine': return 'status-termine';
+    case 'en cours': return 'status-en-cours';
+    case 'nouveau': return 'status-nouveau';
+    default: return 'status-default';
+  }
+};
+
+const goToHome = () => {
+  router.push({ name: 'Home' });
+};
+
+const goToMyReports = () => {
+  router.push({ name: 'MyReports' });
+};
+
+const goToMap = () => {
+  // Already on this page
+  console.log('Already on Map page');
+};
+
+const goToNotifications = () => {
+  router.push({ name: 'Notifications' });
+};
+
+const goToProfile = () => {
+  console.log('Profile');
+};
+
+const getTimeGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Bonjour';
+  if (hour < 18) return 'Bon après-midi';
+  return 'Bonsoir';
 };
 
 const createCustomIcon = (color) => {
@@ -306,6 +446,18 @@ const createCustomIcon = (color) => {
 
 const selectPoint = (point) => {
   selectedPoint.value = point;
+  
+  // Scroll vers la section des détails (priorité: .details-container)
+  const detailsSection = document.querySelector('.details-container') || document.querySelector('.content-container');
+  if (detailsSection) {
+    detailsSection.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
+  }
+  
+  // Petite notification visuelle
+  console.log('📍 Détails affichés pour:', point.titre || 'Signalement');
 };
 
 const openPopup = (e) => {
@@ -324,12 +476,117 @@ const toggleReportMode = () => {
 };
 
 const toggleFilter = () => {
-  // open the dedicated MyReports page instead of modal
-  openMyReports();
+  showUserReportsModal.value = true;
 };
 
 const closeUserReportsModal = () => {
   showUserReportsModal.value = false;
+};
+
+// Photo compression function to avoid Firebase size limits
+const compressImage = (file, maxWidth = 800, maxHeight = 600, quality = 0.7) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    const img = new Image();
+    img.onload = () => {
+      // Calculate new dimensions
+      let { width, height } = img;
+      
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width *= ratio;
+        height *= ratio;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw and compress
+      ctx.drawImage(img, 0, 0, width, height);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+      
+      console.log('🗜️ Image compressée:', {
+        original: file.size ? Math.round(file.size / 1024) + 'KB' : 'N/A',
+        compressed: Math.round(compressedDataUrl.length * 0.75 / 1024) + 'KB',
+        dimensions: `${width}x${height}`
+      });
+      
+      resolve(compressedDataUrl);
+    };
+    
+    if (file instanceof File) {
+      img.src = URL.createObjectURL(file);
+    } else if (typeof file === 'string') {
+      img.src = file;
+    }
+  });
+};
+
+// Photo management functions
+const addPhoto = async () => {
+  if (reportPhotos.value.length >= 5) {
+    alert('Maximum 5 photos autorisées');
+    return;
+  }
+  
+  try {
+    // Try Capacitor Camera first
+    const mod = await import('@capacitor/camera');
+    const { Camera, CameraResultType } = mod;
+    const image = await Camera.getPhoto({
+      quality: 60, // Reduced quality for smaller size
+      allowEditing: false,
+      resultType: CameraResultType.DataUrl,
+      source: 'CAMERA'
+    });
+    
+    if (image && image.dataUrl) {
+      // Compress the image from camera
+      const compressedImage = await compressImage(image.dataUrl);
+      reportPhotos.value.push(compressedImage);
+    }
+  } catch (e) {
+    // Fallback to file input
+    console.log('📱 Camera not available, using file input');
+    if (photoInput.value) {
+      photoInput.value.click();
+    }
+  }
+};
+
+const onFileSelected = async (e) => {
+  const files = Array.from(e.target.files || []);
+  
+  for (const file of files) {
+    if (reportPhotos.value.length >= 5) break;
+    
+    try {
+      // Compress each file before adding
+      const compressedImage = await compressImage(file);
+      reportPhotos.value.push(compressedImage);
+    } catch (error) {
+      console.error('❌ Erreur compression:', error);
+      // Fallback: use original if compression fails, but warn user
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const result = ev.target.result;
+        if (result.length > 500000) { // ~500KB limit warning
+          alert('⚠️ Photo très volumineuse, elle pourrait causer des erreurs.');
+        }
+        reportPhotos.value.push(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+  
+  // Reset input
+  if (photoInput.value) photoInput.value.value = '';
+};
+
+const removePhoto = (index) => {
+  reportPhotos.value.splice(index, 1);
 };
 
 const router = useRouter();
@@ -349,6 +606,7 @@ const handleMapClick = (event) => {
 
 const closeReportModal = () => {
   showReportModal.value = false;
+  reportPhotos.value = [];
   newReport.value = {
     latitude: 0,
     longitude: 0,
@@ -368,13 +626,47 @@ const submitReport = async () => {
   submittingReport.value = true;
 
   try {
+    // Valider et filtrer les photos (limite de sécurité 400KB par photo)
+    const validPhotos = reportPhotos.value.filter(photo => {
+      if (!photo || typeof photo !== 'string' || !photo.startsWith('data:image/')) {
+        return false;
+      }
+      // Estimation taille : base64 utilise ~4/3 de la taille originale
+      const estimatedSize = photo.length * 0.75;
+      if (estimatedSize > 400000) { // 400KB max par photo
+        console.warn('⚠️ Photo trop volumineuse ignorée:', Math.round(estimatedSize / 1024) + 'KB');
+        return false;
+      }
+      return true;
+    });
+    
+    if (validPhotos.length !== reportPhotos.value.length) {
+      alert(`⚠️ ${reportPhotos.value.length - validPhotos.length} photo(s) ignorée(s) (trop volumineuse)`);
+    }
+    
+    console.log('📷 Photos valides:', validPhotos.length + '/' + reportPhotos.value.length);
+    
     const reportData = {
       ...newReport.value,
+      photos: validPhotos,
       status: 'nouveau',
       date: new Date().toISOString(),
       userId: currentUser.value ? currentUser.value.id : null,
       userName: currentUser.value ? (currentUser.value.name || currentUser.value.email) : 'Anonyme'
     };
+
+    // Vérifier la taille totale du document
+    const totalSize = JSON.stringify(reportData).length;
+    console.log('📊 Taille totale document:', Math.round(totalSize / 1024) + 'KB');
+    
+    if (totalSize > 900000) { // 900KB max total document
+      throw new Error('Document trop volumineux. Réduisez le nombre de photos.');
+    }
+
+    console.log('📤 Envoi signalement:', {
+      ...reportData,
+      photos: validPhotos.length + ' photos'
+    });
 
     // Envoyer le signalement vers Firebase
     const savedReport = await apiService.addSignalementToFirebase(reportData);
@@ -387,11 +679,10 @@ const submitReport = async () => {
     reportMode.value = false;
     alert('Signalement envoyé avec succès ! (stocké dans Firestore → collection "signalements")');
 
-
-    // Show success message
+    submittingReport.value = false;
   } catch (err) {
     console.error('Error submitting report:', err);
-    alert('Erreur lors de l\'envoi du signalement');
+    alert('Erreur lors de l\'envoi du signalement: ' + err.message);
     submittingReport.value = false;
   }
 };
@@ -423,6 +714,8 @@ onMounted(async () => {
       // Vérifier les changements de statut pour les notifications
       if (currentUser.value) {
         notificationService.checkForStatusChanges(signalements, currentUser.value.id);
+        // Also refresh unread count from backend to reflect server-created notifications
+        try { notificationService.refreshUnreadNotifications(currentUser.value.id); } catch(e){ console.warn('refreshUnreadNotifications failed', e); }
       }
       
       points.value = signalements;
@@ -455,14 +748,58 @@ onMounted(async () => {
       authDebug.value.logged = true;
       authDebug.value.lastError = null;
       console.log('onAuthStateChanged: uid=', u.uid);
+      // Load persisted notifications and refresh unread badge from server
+      (async () => {
+        try {
+          await notificationService.loadUserNotifications(u.uid);
+          await notificationService.refreshUnreadNotifications(u.uid);
+        } catch (e) {
+          console.warn('Failed to init notifications for user', e);
+        }
+      })();
     } else {
       currentUser.value = null;
       authDebug.value.uid = null;
       authDebug.value.logged = false;
       console.log('onAuthStateChanged: no user');
+      // Clear notifications on sign-out
+      try {
+        const store = notificationService.getStore();
+        store.notifications = [];
+        store.unreadCount = 0;
+      } catch (e) { /* ignore */ }
     }
   });
 });
+
+// Fonctions pour tooltip et galerie photos
+const showTooltip = (point, event) => {
+  hoveredPoint.value = point;
+  const rect = event.target.getBoundingClientRect();
+  tooltipStyle.value = {
+    position: 'fixed',
+    left: rect.left + 'px',
+    top: (rect.top - 10) + 'px',
+    zIndex: 10000,
+    pointerEvents: 'none'
+  };
+};
+
+const hideTooltip = () => {
+  hoveredPoint.value = null;
+};
+
+const showPhotoModal = (photos, startIndex = 0) => {
+  galleryPhotos.value = photos;
+  currentPhotoIndex.value = startIndex;
+  showPhotoGallery.value = true;
+};
+
+const closePhotoModal = () => {
+  showPhotoGallery.value = false;
+  galleryPhotos.value = [];
+  currentPhotoIndex.value = 0;
+};
 
 onBeforeUnmount(() => {
   if (typeof unsubscribeFirebase === 'function') {
@@ -484,6 +821,394 @@ onBeforeUnmount(() => {
   margin-bottom: 30px;
 }
 
+/* Mobile-first styles */
+.map-content {
+  --background: #f5f5f5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Top Navigation */
+.top-navigation {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-logo {
+  font-size: 32px;
+  color: #fbbf24;
+}
+
+.app-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-link {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 16px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.nav-link:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link.active {
+  color: white;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.notification-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notification-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.notification-icon ion-icon {
+  font-size: 18px;
+}
+
+.notification-icon .notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-info .greeting {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.user-menu {
+  cursor: pointer;
+}
+
+.user-avatar {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 20px rgba(251, 191, 36, 0.3);
+}
+
+.mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  padding-top: calc(16px + var(--ion-safe-area-top, 0px));
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.back-btn {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.back-btn ion-icon {
+  font-size: 24px;
+  color: white;
+}
+
+.header-title {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.map-wrapper {
+  padding: 16px;
+  padding-bottom: 200px;
+}
+
+.map-container {
+  height: calc(100vh - 280px);
+  min-height: 300px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.loading-state, .error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #666;
+}
+
+.loading-state ion-spinner {
+  color: #FF6B35;
+  width: 32px;
+  height: 32px;
+}
+
+.report-toggle {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+}
+
+.toggle-btn.active {
+  background: #e74c3c;
+}
+
+.toggle-btn ion-icon {
+  font-size: 20px;
+}
+
+.report-hint {
+  position: fixed;
+  bottom: 160px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff3cd;
+  color: #856404;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 500;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.selected-point-card {
+  position: fixed;
+  bottom: 100px;
+  left: 16px;
+  right: 16px;
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 400;
+}
+
+.point-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.point-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.status-nouveau {
+  background: #E3F2FD;
+  color: #1976D2;
+}
+
+.status-en-cours {
+  background: #FFF3E0;
+  color: #F57C00;
+}
+
+.status-termine {
+  background: #E8F5E9;
+  color: #388E3C;
+}
+
+.status-default {
+  background: #F5F5F5;
+  color: #666;
+}
+
+.point-details p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.point-details strong {
+  color: #333;
+}
+
+.point-photos {
+  margin-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+}
+
+.point-photos .photos-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.point-photo {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+  transition: transform 0.2s;
+}
+
+.point-photo:hover {
+  transform: scale(1.05);
+  border-color: #3b82f6;
+}
+
+.more-photos-badge {
+  width: 60px;
+  height: 60px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.more-photos-badge:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.close-details {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.close-details ion-icon {
+  font-size: 16px;
+  color: #666;
+}
+
+.popup-content {
+  padding: 8px;
+  font-size: 13px;
+}
+
+/* Legacy styles - keeping some for modal compatibility */
 .page-title {
   font-size: 2.5rem;
   color: #2c3e50;
@@ -745,4 +1470,313 @@ onBeforeUnmount(() => {
   background: transparent;
   padding-top: 8px;
 }
+
+/* Photo management styles */
+.photos-section {
+  margin-top: 16px;
+}
+
+.photo-actions {
+  margin-bottom: 12px;
+}
+
+.btn-photo {
+  background: #f0f8ff;
+  color: #333;
+  border: 2px dashed #4CAF50;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.btn-photo:hover {
+  background: #e8f5e8;
+  border-color: #45a049;
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.photo-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.photo-thumb {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  display: block;
+}
+
+.btn-remove-photo {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: rgba(255,0,0,0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.btn-remove-photo:hover {
+  background: rgba(255,0,0,1);
+}
+
+.photo-hint {
+  font-size: 12px;
+  color: #666;
+  margin: 4px 0 0 0;
+}
+
+/* Responsive layout for map + details */
+.map-and-details {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.map-container {
+  flex: 1;
+  min-height: 520px;
+}
+.details-container {
+  width: 350px;
+  min-height: 420px;
+}
+
+@media (max-width: 900px) {
+  .map-and-details {
+    flex-direction: column;
+  }
+  .details-container {
+    width: 100%;
+  }
+  .map-container {
+    min-height: 360px;
+  }
+}
+
+/* Tooltip styles */
+.map-tooltip {
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  max-width: 250px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateX(-50%) translateY(-100%);
+}
+
+.tooltip-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tooltip-content p {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.tooltip-photos {
+  margin-top: 8px;
+}
+
+.photo-preview {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.tooltip-photo {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.more-indicator {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  color: white;
+}
+
+/* Photo Modal styles */
+.photo-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.photo-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 800px;
+  max-height: 90vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.photo-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.photo-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #1f2937;
+}
+
+.btn-close-modal {
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.btn-close-modal:hover {
+  background: #f3f4f6;
+}
+
+.photo-modal-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.photo-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.main-photo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.photo-thumbnails {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+  overflow-x: auto;
+}
+
+.thumb {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  flex-shrink: 0;
+}
+
+.thumb:hover {
+  opacity: 0.8;
+}
+
+.thumb.active {
+  border-color: #3b82f6;
+}
+
+/* Popup styles */
+.popup-content {
+  font-family: 'Inter', sans-serif;
+}
+
+.popup-photos {
+  margin-top: 8px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 8px;
+}
+
+.photos-gallery {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.popup-photo {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+  transition: transform 0.2s;
+}
+
+.popup-photo:hover {
+  transform: scale(1.1);
+}
+
+.more-photos {
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 </style>

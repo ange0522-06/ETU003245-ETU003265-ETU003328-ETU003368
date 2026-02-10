@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
+import java.time.LocalDateTime;
 
 
 @Entity
@@ -31,8 +32,19 @@ public class User {
 
     @Column(nullable = false)
     private int failedAttempts = 0;
+    
+    
+    // Nouveaux champs pour le tracking Firebase
+    @Column(name = "firebase_uid")
+    private String firebaseUid;
+    
+    @Column(name = "firebase_synced_at")
+    private LocalDateTime firebaseSyncedAt;
+    
+    @Column(name = "sync_status")
+    private String syncStatus = "NOT_SYNCED";
 
-    // Getters et setters
+    // Getters et setters existants
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -56,5 +68,36 @@ public class User {
     }
     public void setFailedAttempts(int failedAttempts) {
         this.failedAttempts = failedAttempts;
+    }
+    
+    // Nouveaux getters et setters pour Firebase
+    public String getFirebaseUid() {
+        return firebaseUid;
+    }
+    public void setFirebaseUid(String firebaseUid) {
+        this.firebaseUid = firebaseUid;
+    }
+    
+    public LocalDateTime getFirebaseSyncedAt() {
+        return firebaseSyncedAt;
+    }
+    public void setFirebaseSyncedAt(LocalDateTime firebaseSyncedAt) {
+        this.firebaseSyncedAt = firebaseSyncedAt;
+    }
+    
+    public String getSyncStatus() {
+        return syncStatus;
+    }
+    public void setSyncStatus(String syncStatus) {
+        this.syncStatus = syncStatus;
+    }
+    
+    // Méthodes utiles
+    public boolean isFirebaseSynced() {
+        return firebaseUid != null && !firebaseUid.isEmpty() && "SYNCED".equals(syncStatus);
+    }
+    
+    public boolean isEligibleForFirebaseSync() {
+        return "user".equalsIgnoreCase(role);
     }
 }

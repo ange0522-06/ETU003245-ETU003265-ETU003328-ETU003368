@@ -124,6 +124,7 @@ export default function Map() {
           longitude: s.longitude,
           description: s.description,
           id_user: s.id_user,
+          niveau: s.niveau || 1,
           dateNouveau: s.dateNouveau,
           dateEnCours: s.dateEnCours,
           dateTermine: s.dateTermine,
@@ -254,6 +255,7 @@ export default function Map() {
                       <div style={{fontSize: '14px', lineHeight: '1.6'}}>
                         <div><span style={{color: '#666'}}>Status :</span> <b style={{color: getStatusColor(pt.status)}}>{pt.status}</b></div>
                         <div><span style={{color: '#666'}}>Date :</span> {pt.date || '-'}</div>
+                        <div><span style={{color: '#666'}}>Niveau :</span> <b style={{color: '#9c27b0'}}>{pt.niveau || 1}/10</b></div>
                         <div><span style={{color: '#666'}}>Surface :</span> {pt.surface || '-'} m²</div>
                         <div><span style={{color: '#666'}}>Budget :</span> {pt.budget ? `${pt.budget.toLocaleString()} Ar` : '-'}</div>
                         <div><span style={{color: '#666'}}>Entreprise :</span> {pt.entreprise || '-'}</div>

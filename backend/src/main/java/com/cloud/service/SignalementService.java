@@ -83,6 +83,7 @@ public class SignalementService {
         if (updated.getSurfaceM2() != null) s.setSurfaceM2(updated.getSurfaceM2());
         if (updated.getBudget() != null) s.setBudget(updated.getBudget());
         if (updated.getEntreprise() != null) s.setEntreprise(updated.getEntreprise());
+        if (updated.getNiveau() != null) s.setNiveau(updated.getNiveau());
         if (updated.getUtilisateur() != null) s.setUtilisateur(updated.getUtilisateur());
         
         return signalementRepository.save(s);

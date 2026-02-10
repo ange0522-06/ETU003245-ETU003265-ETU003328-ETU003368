@@ -108,6 +108,7 @@ export async function getSignalementsApi(token) {
     longitude: s.longitude,
     description: s.description,
     id_user: s.utilisateur ? s.utilisateur.id : s.id_user,
+    niveau: s.niveau || 1, // Niveau de réparation (1-10)
     // Ajouter les dates d'étapes
     dateNouveau: s.dateNouveau,
     dateEnCours: s.dateEnCours,
@@ -273,4 +274,19 @@ export async function countPhotosApi(signalementId) {
   if (!res.ok) throw new Error("Erreur lors du comptage des photos");
   const data = await res.json();
   return data.count;
+}
+
+// Re-synchroniser le mot de passe Firebase avec le mot de passe PostgreSQL
+// Permet aux utilisateurs existants de mettre à jour leur mot de passe Firebase
+export async function resyncFirebasePasswordApi(email, password) {
+  const res = await fetch(`${API_URL}/auth/resync-firebase-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Erreur lors de la synchronisation du mot de passe Firebase");
+  }
+  return data;
 }

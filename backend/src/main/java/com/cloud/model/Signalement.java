@@ -19,6 +19,7 @@ public class Signalement {
     private Double surfaceM2;
     private Double budget;
     private String entreprise;
+    private Integer niveau; // Niveau de réparation (1-10)
 
     // Dates pour chaque étape d'avancement
     private Timestamp dateNouveau;
@@ -50,6 +51,8 @@ public class Signalement {
     public void setBudget(Double budget) { this.budget = budget; }
     public String getEntreprise() { return entreprise; }
     public void setEntreprise(String entreprise) { this.entreprise = entreprise; }
+    public Integer getNiveau() { return niveau; }
+    public void setNiveau(Integer niveau) { this.niveau = niveau; }
     public User getUtilisateur() { return utilisateur; }
     public void setUtilisateur(User utilisateur) { this.utilisateur = utilisateur; }
     

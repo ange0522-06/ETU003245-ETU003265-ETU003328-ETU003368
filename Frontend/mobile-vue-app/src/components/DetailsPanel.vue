@@ -7,13 +7,14 @@
     <div v-else class="point-details">
       <div class="detail-header">
         <h4>{{ point.titre || 'Travaux routier' }}</h4>
-        <span :class="getStatusClass(point.status)">{{ point.status }}</span>
+        <div class="header-actions">
+          <span :class="getStatusClass(point.status)">{{ point.status }}</span>
+        </div>
       </div>
+
       <div class="detail-grid">
         <div class="detail-item">
           <label>Date :</label>
-
-          
           <span>{{ point.date || '-' }}</span>
         </div>
         <div class="detail-item">
@@ -27,21 +28,46 @@
         <div class="detail-item">
           <label>Surface :</label>
           <span>{{ point.surface || '-' }} m²</span>
+          <small class="field-note">Modifiable uniquement par le manager</small>
         </div>
         <div class="detail-item">
           <label>Budget :</label>
           <span>{{ point.budget || '-' }} Ar</span>
+          <small class="field-note">Modifiable uniquement par le manager</small>
         </div>
         <div class="detail-item">
           <label>Entreprise :</label>
           <span>{{ point.entreprise || '-' }}</span>
+          <small class="field-note">Modifiable uniquement par le manager</small>
+        </div>
+        <div class="detail-item full-width">
+          <label>Description :</label>
+          <span>{{ point.description || '-' }}</span>
+        </div>
+        <div class="detail-item full-width">
+          <label>Type :</label>
+          <span>{{ point.type || '-' }}</span>
+        </div>        <div class="detail-item full-width">
+          <label>Photos :</label>
+          <div class="photos-display">
+            <div v-if="point.photos && point.photos.length > 0" class="photos-list">
+              <img v-for="(photo, index) in point.photos" :key="index" :src="photo" alt="Photo" class="photo-thumbnail" @click="openPhoto(photo)">
+            </div>
+            <span v-else>Aucune photo</span>
+          </div>
+        </div>      </div>
+
+      <!-- Photos gallery -->
+      <div v-if="point.photos && point.photos.length" class="photos-gallery">
+        <h5>Photos</h5>
+        <div class="photos-row">
+          <div v-for="(p, i) in point.photos" :key="i" class="gallery-item">
+            <img :src="p" @click="openPhoto(p)" class="gallery-thumb" alt="Photo signalement" />
+          </div>
         </div>
       </div>
 
       <div class="actions">
-        <button @click="viewOnMap" class="btn-primary">
-          📍 Voir sur la carte
-        </button>
         <button @click="shareLocation" class="btn-secondary">
           📤 Partager la position
         </button>
@@ -51,8 +77,6 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue';
-
 const props = defineProps({
   point: {
     type: Object,
@@ -69,14 +93,6 @@ const getStatusClass = (status) => {
   }
 };
 
-const viewOnMap = () => {
-  if (props.point) {
-    // This would center the map on the selected point
-    // Implementation depends on how the map component is structured
-    console.log('View on map:', props.point);
-  }
-};
-
 const shareLocation = () => {
   if (props.point && navigator.share) {
     navigator.share({
@@ -90,6 +106,15 @@ const shareLocation = () => {
     navigator.clipboard.writeText(text).then(() => {
       alert('Position copiée dans le presse-papiers');
     });
+  }
+};
+
+const openPhoto = (src) => {
+  try {
+    // open in a new tab / viewer
+    window.open(src, '_blank');
+  } catch (e) {
+    console.warn('Cannot open photo', e);
   }
 };
 </script>
@@ -138,110 +163,189 @@ const shareLocation = () => {
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
+  gap: 15px 25px;
 }
 
 .detail-item {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+}
+
+.detail-item.full-width {
+  grid-column: 1 / -1;
 }
 
 .detail-item label {
   font-weight: 600;
   color: #34495e;
+  margin-bottom: 5px;
   font-size: 0.9rem;
 }
 
 .detail-item span {
   color: #2c3e50;
   font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.field-note {
+  display: block;
+  font-size: 11px;
+  color: #999;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.photos-display {
+  margin-top: 5px;
+}
+
+.photos-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.photo-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.photo-thumbnail:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}
+
+.photos-gallery {
+  margin-top: 20px;
+}
+
+.photos-gallery h5 {
+  margin-bottom: 15px;
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.photos-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gallery-item {
+  cursor: pointer;
+}
+
+.gallery-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+}
+
+.gallery-thumb:hover {
+  transform: scale(1.1);
 }
 
 .actions {
+  margin-top: 25px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-top: 20px;
-  border-top: 1px solid #ecf0f1;
-}
-
-.btn-primary, .btn-secondary {
-  padding: 12px 16px;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-primary {
-  background: #3498db;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #2980b9;
+  gap: 12px;
+  justify-content: center;
 }
 
 .btn-secondary {
-  background: #ecf0f1;
-  color: #2c3e50;
+  background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
 
 .btn-secondary:hover {
-  background: #d5dbdb;
+  background: linear-gradient(135deg, #7f8c8d, #6c7b7d);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(149, 165, 166, 0.3);
 }
 
-.status-termine {
-  color: #27ae60;
-  font-weight: bold;
-  background: #d5f4e6;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-}
-
-.status-en-cours {
-  color: #f39c12;
-  font-weight: bold;
-  background: #fdeaa7;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .status-nouveau {
-  color: #3498db;
-  font-weight: bold;
-  background: #d6eaf8;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-en-cours {
+  background: #fff3e0;
+  color: #f57c00;
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-termine {
+  background: #e8f5e8;
+  color: #2e7d32;
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .status-default {
-  color: #95a5a6;
-  font-weight: bold;
-  background: #ecf0f1;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  background: #f5f5f5;
+  color: #666;
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
-@media (max-width: 768px) {
+/* Responsive adjustments */
+@media (max-width: 600px) {
   .detail-grid {
     grid-template-columns: 1fr;
+    gap: 15px;
   }
-
+  
   .detail-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
-
+  
+  .header-actions {
+    align-self: stretch;
+    justify-content: space-between;
+  }
+  
   .actions {
     flex-direction: column;
+  }
+  
+  .photos-row {
+    justify-content: center;
   }
 }
 </style>

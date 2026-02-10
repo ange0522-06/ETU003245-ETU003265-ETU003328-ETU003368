@@ -27,3 +27,7 @@ point, total surface, avancement en %, total
 budget)
 
 Donc enlever les autres header inutiles si la personne est visiteur,garder toujours l'icone de connexion
+
+
+Maintenannt,la synchronisation est succes mais lorsque je connecte a l'aide de l'un de ces utilisateur dans mobil,il dit que email ou mot de passe incorrect  
+Fais en sorte que l'utilisateur peut se conncter a l'aide de l'email et mot de passe deja creer dans la base

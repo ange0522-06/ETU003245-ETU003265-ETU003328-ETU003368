@@ -58,7 +58,7 @@
 
         <div v-if="selectedReport" class="report-full-details">
           <h4>Détails complets</h4>
-          <div class="full-details-grid">
+          <div v-if="!editMode" class="full-details-grid">
             <div class="detail-item">
               <label>Titre:</label>
               <span>{{ selectedReport.titre || 'Signalement' }}</span>
@@ -92,8 +92,54 @@
               <span>{{ selectedReport.longitude.toFixed(6) }}</span>
             </div>
           </div>
+          <div v-else class="edit-form">
+            <div class="form-group">
+              <label for="editTitre">Titre *</label>
+              <input
+                id="editTitre"
+                type="text"
+                v-model="editData.titre"
+                placeholder="Titre du signalement"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="editType">Type de problème *</label>
+              <select id="editType" v-model="editData.type" required>
+                <option value="">Sélectionnez un type</option>
+                <option value="nid-de-poule">Nid de poule</option>
+                <option value="fissure">Fissure/route abîmée</option>
+                <option value="eclairage">Éclairage défectueux</option>
+                <option value="signalisation">Signalisation manquante</option>
+                <option value="drainage">Problème de drainage</option>
+                <option value="autre">Autre</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="editDescription">Description *</label>
+              <textarea
+                id="editDescription"
+                v-model="editData.description"
+                placeholder="Décrivez le problème en détail..."
+                rows="3"
+                required
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label for="editUrgence">Niveau d'urgence</label>
+              <select id="editUrgence" v-model="editData.urgence">
+                <option value="faible">Faible</option>
+                <option value="moyen">Moyen</option>
+                <option value="eleve">Élevé</option>
+                <option value="critique">Critique</option>
+              </select>
+            </div>
+          </div>
         </div>
         <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center; padding-top:10px; border-top:1px solid #ecf0f1">
+          <button v-if="selectedReport && !editMode" @click="startEdit" class="btn">Modifier</button>
+          <button v-if="editMode" @click="saveEdit" class="btn" :disabled="saving">{{ saving ? 'Sauvegarde...' : 'Sauvegarder' }}</button>
+          <button v-if="editMode" @click="cancelEdit" class="btn-secondary">Annuler</button>
           <button v-if="hasMore" @click="loadMore" class="btn">Charger plus</button>
           <button @click="closeModal" class="btn-secondary">Fermer</button>
         </div>
@@ -126,6 +172,9 @@ const dateFrom = ref('');
 const dateTo = ref('');
 const page = ref(1);
 const pageSize = ref(10);
+const editMode = ref(false);
+const editData = ref({});
+const saving = ref(false);
 
 const userReports = computed(() => {
   return props.reports.filter(report => report.userId === props.currentUserId).sort((a,b) => {
@@ -166,6 +215,7 @@ const getStatusClass = (status) => {
 
 const selectReport = (report) => {
   selectedReport.value = report;
+  editMode.value = false;
 };
 
 const resetPaging = () => {
@@ -177,8 +227,59 @@ const loadMore = () => {
   page.value += 1;
 };
 
+const startEdit = () => {
+  editData.value = {
+    titre: selectedReport.value.titre || '',
+    type: selectedReport.value.type || '',
+    description: selectedReport.value.description || '',
+    urgence: selectedReport.value.urgence || 'moyen'
+  };
+  editMode.value = true;
+};
+
+const cancelEdit = () => {
+  editMode.value = false;
+  editData.value = {};
+};
+
+const saveEdit = async () => {
+  if (!editData.value.titre || !editData.value.type || !editData.value.description) {
+    alert('Veuillez remplir tous les champs obligatoires');
+    return;
+  }
+
+  saving.value = true;
+
+  try {
+    const updateData = {
+      titre: editData.value.titre,
+      type: editData.value.type,
+      description: editData.value.description,
+      urgence: editData.value.urgence
+    };
+
+    // Import apiService dynamically to avoid circular dependency
+    const { apiService } = await import('../services/api.js');
+    await apiService.updateSignalementInFirebase(selectedReport.value.id, updateData);
+
+    // Update local data
+    Object.assign(selectedReport.value, updateData);
+
+    editMode.value = false;
+    editData.value = {};
+    alert('Signalement mis à jour avec succès !');
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour:', error);
+    alert('Erreur lors de la mise à jour du signalement: ' + error.message);
+  } finally {
+    saving.value = false;
+  }
+};
+
 const closeModal = () => {
   selectedReport.value = null;
+  editMode.value = false;
+  editData.value = {};
   emit('close');
 };
 </script>
@@ -334,6 +435,26 @@ const closeModal = () => {
   justify-content: flex-end;
 }
 
+.btn {
+  padding: 10px 20px;
+  border: none;
+  background: #3498db;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  background: #2980b9;
+}
+
+.btn:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+}
+
 .btn-secondary {
   padding: 10px 20px;
   border: 2px solid #95a5a6;
@@ -384,6 +505,41 @@ const closeModal = () => {
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.8rem;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #34495e;
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 8px 12px;
+  border: 2px solid #ecf0f1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3498db;
 }
 
 @media (max-width: 768px) {

@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class AuthService {
 
@@ -21,13 +23,17 @@ public class AuthService {
 
     @Autowired
     private JwtService jwtService;
+    
+    @Autowired
+    private FirebaseAuthService firebaseAuthService;
 
     @Value("${security.login.max-attempts:3}")
     private int maxAttempts;
     
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, FirebaseAuthService firebaseAuthService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.firebaseAuthService = firebaseAuthService;
     }
 
 
@@ -78,7 +84,21 @@ public class AuthService {
         user.setRole(role != null ? role.toLowerCase() : "user"); // Stocke "user" ou "manager" en base, mais le JWT aura ROLE_...
         user.setLocked(false);
         user.setFailedAttempts(0);
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        
+        // Synchroniser automatiquement vers Firebase si l'utilisateur est éligible (rôle "user")
+        if (savedUser.isEligibleForFirebaseSync()) {
+            try {
+                String firebaseUid = firebaseAuthService.syncUserToFirebase(savedUser, password);
+                log.info("✅ Utilisateur {} synchronisé vers Firebase avec UID: {}", email, firebaseUid);
+            } catch (Exception e) {
+                log.warn("⚠️ Échec de la synchronisation Firebase pour {}: {} (l'utilisateur peut se connecter sur le web)", 
+                         email, e.getMessage());
+                // On ne lance pas d'exception car l'utilisateur est quand même créé en base
+            }
+        }
+        
+        return savedUser;
     }
 
     public User login(String email, String password) {

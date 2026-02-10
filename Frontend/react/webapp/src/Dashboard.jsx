@@ -53,14 +53,20 @@ export default function Dashboard() {
       setLoading(true);
       setError("");
       try {
-        if (!token) throw new Error("Utilisateur non authentifié");
-        const [sig, st] = await Promise.all([
-          getSignalementsApi(token),
-          getStatsApi(token)
-        ]);
+        // Récupérer les signalements (accessible sans auth)
+        const sig = await getSignalementsApi(token);
         setSignalements(sig);
-        setStats(st);
-        setPoints(sig.length ? sig : mockPoints); // Utilise signalements si dispo, sinon mock
+        setPoints(sig.length ? sig : mockPoints);
+        
+        // Stats seulement si authentifié (requiert ROLE_MANAGER)
+        if (token) {
+          try {
+            const st = await getStatsApi(token);
+            setStats(st);
+          } catch (statsErr) {
+            console.log("Stats non disponibles pour ce rôle");
+          }
+        }
       } catch (err) {
         setError(err.message || "Erreur lors du chargement des données");
         setPoints(mockPoints);
@@ -94,6 +100,16 @@ export default function Dashboard() {
     </div>
   );
 
+  // Calculer les stats localement si non disponibles depuis l'API
+  const computedStats = stats || {
+    nbPoints: signalements.length,
+    totalSurface: signalements.reduce((sum, s) => sum + (s.surface || 0), 0),
+    avancement: signalements.length > 0 
+      ? Math.round((signalements.filter(s => s.status === 'termine').length / signalements.length) * 100) 
+      : 0,
+    totalBudget: signalements.reduce((sum, s) => sum + (s.budget || 0), 0)
+  };
+
   return (
     <div className="dashboard-page">
       <div className="page-header">
@@ -106,26 +122,26 @@ export default function Dashboard() {
       </div>
 
       <div className="content-container">
-        {stats && (
+        {computedStats && (
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-icon">📍</div>
-              <div className="stat-value">{stats.nbPoints}</div>
+              <div className="stat-value">{computedStats.nbPoints}</div>
               <div className="stat-label">Points de travaux</div>
             </div>
             <div className="stat-card">
               <div className="stat-icon">📐</div>
-              <div className="stat-value">{stats.totalSurface} m²</div>
+              <div className="stat-value">{computedStats.totalSurface} m²</div>
               <div className="stat-label">Surface totale</div>
             </div>
             <div className="stat-card">
               <div className="stat-icon">📈</div>
-              <div className="stat-value">{stats.avancement}%</div>
+              <div className="stat-value">{computedStats.avancement}%</div>
               <div className="stat-label">Avancement global</div>
             </div>
             <div className="stat-card">
               <div className="stat-icon">💰</div>
-              <div className="stat-value">{stats.totalBudget} Ar</div>
+              <div className="stat-value">{computedStats.totalBudget} Ar</div>
               <div className="stat-label">Budget total</div>
             </div>
           </div>
@@ -211,7 +227,7 @@ export default function Dashboard() {
                     strokeWidth="10" 
                     fill="none"
                     strokeDasharray={`${2 * Math.PI * 50}`}
-                    strokeDashoffset={`${2 * Math.PI * 50 * (1 - (stats.avancement / 100))}`}
+                    strokeDashoffset={`${2 * Math.PI * 50 * (1 - (computedStats.avancement / 100))}`}
                     style={{transition: 'stroke-dashoffset 0.5s ease'}}
                   />
                 </svg>
@@ -222,7 +238,7 @@ export default function Dashboard() {
                   transform: 'translate(-50%, -50%)',
                   textAlign: 'center'
                 }}>
-                  <div style={{fontSize: '24px', fontWeight: '700', color: '#1f2937'}}>{stats.avancement}%</div>
+                  <div style={{fontSize: '24px', fontWeight: '700', color: '#1f2937'}}>{computedStats.avancement}%</div>
                 </div>
               </div>
               <div style={{textAlign: 'center'}}>
