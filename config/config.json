@@ -1,0 +1,20 @@
+{
+  "options": {
+    "cors": true,
+    "paths": {
+      "root": "/data",
+      "styles": "/config/styles",
+      "fonts": "/config/fonts/OpenSans"
+    }
+  },
+  "data": {
+    "antananarivo": {
+      "mbtiles": "antananarivo.mbtiles"
+    }
+  },
+  "styles": {
+    "basic": {
+      "style": "osm-bright.json"
+    }
+  }
+}
