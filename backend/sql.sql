@@ -81,8 +81,8 @@ CREATE TABLE synchronisation (
 --     id SERIAL PRIMARY KEY,
 --     nom TEXT NOT NULL
 -- );
--- alter table signalement add column id_photo int;
--- alter table signalement add FOREIGN KEY ON id_photo;
+alter table signalement add column id_photo int;
+alter table signalement add FOREIGN KEY ON id_photo;
 
 
 ---
