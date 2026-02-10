@@ -53,7 +53,8 @@ export async function importSignalementsFromFirebase(token) {
 // src/api.js
 // Services d'intégration API pour le frontend
 
-const API_URL = "http://localhost:8080/api"; // À adapter selon le backend
+// Utilise la variable d'environnement ou localhost par défaut
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
 export async function loginApi(email, password) {
   const res = await fetch(`${API_URL}/auth/login`, {
