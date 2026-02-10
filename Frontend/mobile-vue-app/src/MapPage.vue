@@ -3,6 +3,12 @@
     <div class="page-header">
       <h1 class="page-title">🗺️ Signalement des problèmes routiers</h1>
       <p class="page-subtitle">Cliquez sur la carte pour signaler un problème ou visualisez les signalements existants</p>
+      <div v-if="!loading" style="margin-top: 12px; padding: 8px 16px; background: #d4edda; border-radius: 6px; text-align: center">
+        <strong>📍 {{ filteredPoints.length }}</strong> signalement(s) sur la carte
+        <span v-if="filteredPoints.length < points.length" style="margin-left: 8px; color: #856404">
+          (⚠️ {{ points.length - filteredPoints.length }} sans coordonnées GPS)
+        </span>
+      </div>
     </div>
 
     <div class="controls">
@@ -213,7 +219,35 @@ const newReport = ref({
 const currentUser = ref(null);
 const authDebug = ref({ uid: null, logged: false, lastError: null });
 
-const filteredPoints = computed(() => points.value);
+const filteredPoints = computed(() => {
+  // Filtrer uniquement les signalements avec coordonnées GPS valides
+  const validPoints = points.value.filter(p => 
+    p.latitude && p.longitude && 
+    !isNaN(p.latitude) && !isNaN(p.longitude) &&
+    p.latitude !== 0 && p.longitude !== 0
+  );
+  
+  // Décaler légèrement les marqueurs qui ont les mêmes coordonnées
+  return validPoints.map((point, index) => {
+    const duplicates = validPoints.filter(p => 
+      Math.abs(p.latitude - point.latitude) < 0.00001 && 
+      Math.abs(p.longitude - point.longitude) < 0.00001
+    );
+    
+    if (duplicates.length > 1) {
+      const dupIndex = duplicates.findIndex(p => p.id === point.id);
+      // Décalage en cercle autour du point original
+      const angle = (dupIndex * 360 / duplicates.length) * (Math.PI / 180);
+      const offset = 0.0005; // ~50m de décalage
+      return {
+        ...point,
+        latitude: point.latitude + (offset * Math.sin(angle)),
+        longitude: point.longitude + (offset * Math.cos(angle))
+      };
+    }
+    return point;
+  });
+});
 
 // Anchor for scrolling to the recap section
 // recap anchor and scroll removed — recap is visible by default

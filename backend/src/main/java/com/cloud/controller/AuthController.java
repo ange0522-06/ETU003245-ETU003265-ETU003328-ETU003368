@@ -3,6 +3,7 @@ package com.cloud.controller;
 import com.cloud.model.User;
 import com.cloud.auth.AuthResponse;
 import com.cloud.service.AuthService;
+import com.cloud.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -15,9 +16,11 @@ import com.cloud.dto.RegisterRequest;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserRepository userRepository;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserRepository userRepository) {
         this.authService = authService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/register")
@@ -47,6 +50,12 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(403).body(e.getMessage());
         }
+    }
+
+    @GetMapping("/check-manager")
+    public ResponseEntity<Map<String, Boolean>> checkManagerExists() {
+        boolean exists = userRepository.existsByRoleIgnoreCase("manager");
+        return ResponseEntity.ok(Map.of("exists", exists));
     }
 
 }

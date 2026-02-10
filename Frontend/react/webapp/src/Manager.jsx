@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getSignalementsApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, updateSignalementApi } from "./api";
+import { getSignalementsApi, updateSignalementStatusApi, syncSignalementsToFirebase, getSignalementsFromFirebase, importSignalementsFromFirebase, updateSignalementApi } from "./api";
 import { useProfile } from "./ProfileContext";
 import RecapTable from "./RecapTable";
 import PhotoGallery from "./PhotoGallery";
@@ -50,32 +50,25 @@ export default function Manager() {
     }
   };
 
-  // Synchronisation Firebase - Récupérer depuis Firebase
-  const handleGetFromFirebase = async () => {
+  // Importer les signalements non importés depuis Firebase vers SQL
+  const handleImportFromFirebase = async () => {
     setSyncing(true);
     try {
-      const sig = await getSignalementsFromFirebase(token);
-      // Mapper les champs Firebase vers le format frontend
-      const mapped = sig.map(s => ({
-        id: s.idSignalement || s.id,
-        status: s.statut || s.status,
-        date: s.dateSignalement ? s.dateSignalement.split('T')[0] : s.date || '',
-        surface: s.surfaceM2 || s.surface,
-        budget: s.budget,
-        entreprise: s.entreprise,
-        titre: s.titre,
-        latitude: s.latitude,
-        longitude: s.longitude,
-        description: s.description,
-        id_user: s.id_user
-      }));
-      setSignalements(mapped);
+      const result = await importSignalementsFromFirebase(token);
       setError("");
-      // keep a small non-blocking confirmation
-      // using alert for quick feedback but not for errors
-      alert(`✅ ${mapped.length} signalements récupérés depuis Firebase !`);
+      
+      // Afficher le résultat de l'import
+      const message = `✅ Import terminé !\n` +
+        `- ${result.importedCount} signalement(s) importé(s) avec succès\n` +
+        `- ${result.errorCount} erreur(s)\n` +
+        `- ${result.totalUnimported} signalement(s) non importé(s) au total`;
+      alert(message);
+      
+      // Recharger les signalements depuis SQL pour voir les nouveaux
+      const sig = await getSignalementsApi(token);
+      setSignalements(sig);
     } catch (err) {
-      setError(err.message || "Erreur lors de la récupération depuis Firebase");
+      setError(err.message || "Erreur lors de l'import depuis Firebase");
     } finally {
       setSyncing(false);
     }
@@ -219,7 +212,7 @@ export default function Manager() {
                 {syncing ? '⏳ Synchronisation...' : '⬆️ Synchroniser vers Firebase (Mobile)'}
               </button>
               <button 
-                onClick={handleGetFromFirebase} 
+                onClick={handleImportFromFirebase} 
                 disabled={syncing}
                 style={{
                   background: syncing ? '#9e9e9e' : '#2196f3', 
@@ -234,7 +227,7 @@ export default function Manager() {
                   gap: '8px'
                 }}
               >
-                {syncing ? '⏳ Chargement...' : '⬇️ Récupérer depuis Firebase'}
+                {syncing ? '⏳ Import en cours...' : '⬇️ Importer depuis Firebase'}
               </button>
             </>
           )}

@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useProfile } from "./ProfileContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { loginApi, registerApi } from "./api";
+import { loginApi, registerApi, checkManagerExistsApi } from "./api";
 import roadLogo from "./assets/1.jpg";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode');
   const [isLogin, setIsLogin] = useState(mode !== 'signup');
+  const [managerExists, setManagerExists] = useState(false);
+  const [checkingManager, setCheckingManager] = useState(true);
   
   useEffect(() => {
     if (mode === 'signup') {
@@ -16,6 +18,28 @@ export default function Auth() {
       setIsLogin(true);
     }
   }, [mode]);
+
+  // Fonction pour vérifier si un manager existe
+  const checkManager = async () => {
+    try {
+      console.log("Vérification de l'existence du manager...");
+      const result = await checkManagerExistsApi();
+      console.log("Résultat de la vérification:", result);
+      setManagerExists(result.exists);
+      console.log("Manager existe:", result.exists);
+    } catch (err) {
+      console.error("Erreur lors de la vérification du manager:", err);
+      setManagerExists(false);
+    } finally {
+      setCheckingManager(false);
+    }
+  };
+
+  // Vérifier si un manager existe au chargement du composant
+  useEffect(() => {
+    checkManager();
+  }, []);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -36,6 +60,12 @@ export default function Auth() {
 
     if (!email || !password || (!isLogin && password !== confirm)) {
       setError("Veuillez remplir correctement le formulaire.");
+      return;
+    }
+
+    // Empêcher la création d'un manager si un existe déjà
+    if (!isLogin && managerExists) {
+      setError("Un manager existe déjà. Vous ne pouvez pas créer de nouveau compte manager.");
       return;
     }
 
@@ -60,6 +90,12 @@ export default function Auth() {
         navigate("/dashboard");
       }
     } catch (err) {
+      console.error("Erreur d'authentification:", err);
+      // Re-vérifier l'existence du manager après une erreur d'inscription
+      if (!isLogin) {
+        await checkManager();
+      }
+      
       // Si le backend renvoie un message de blocage, on l'affiche
       if (err.message && err.message.toLowerCase().includes("locked")) {
         setBlocked(true);
@@ -89,6 +125,38 @@ export default function Auth() {
               {isLogin ? "Veuillez entrer vos informations." : "Créez votre compte administrateur pour gérer la plateforme."}
             </p>
           </div>
+
+          {/* Afficher un message si un manager existe */}
+          {!checkingManager && managerExists && isLogin && (
+            <div className="manager-exists-message" style={{
+              background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              color: 'white',
+              fontSize: '13px',
+              marginBottom: '15px',
+              textAlign: 'center',
+              fontWeight: '500'
+            }}>
+              ✅ Connectez-vous en tant que Manager
+            </div>
+          )}
+
+          {/* Empêcher la création si un manager existe déjà */}
+          {!checkingManager && managerExists && !isLogin && (
+            <div className="manager-exists-warning" style={{
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              color: 'white',
+              fontSize: '13px',
+              marginBottom: '15px',
+              textAlign: 'center',
+              fontWeight: '500'
+            }}>
+              ⚠️ Un manager existe déjà. Vous ne pouvez pas créer de nouveau compte manager.
+            </div>
+          )}
 
           {blocked ? (
             <div className="auth-blocked-message" style={{color:'#ff6b6b', marginTop:8, fontWeight:600}}>
@@ -150,21 +218,6 @@ export default function Auth() {
                 </div>
               </div>
             )}
-            
-            {!isLogin && (
-              <div className="manager-info-box" style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '13px',
-                marginBottom: '15px',
-                textAlign: 'center',
-                fontWeight: '500'
-              }}>
-                👨‍💼 Vous créez un compte <strong>Manager</strong> avec tous les privilèges d'administration
-              </div>
-            )}
 
             {isLogin && (
               <div className="form-options">
@@ -176,21 +229,40 @@ export default function Auth() {
               </div>
             )}
             
-            <button type="submit" className="modern-submit-btn">
+            <button type="submit" className="modern-submit-btn" disabled={!isLogin && managerExists}>
               {isLogin ? "Se connecter" : "S'inscrire"}
             </button>
           </form>
           
           <div className="auth-footer">
             <p className="footer-text">
-              {isLogin ? "Aucun manager n'existe encore? " : "Vous avez déjà un compte? "}
-              <button 
-                onClick={() => setIsLogin(!isLogin)} 
-                className="footer-link"
-                type="button"
-              >
-                {isLogin ? "Créer un compte Manager" : "Se connecter"}
-              </button>
+              {isLogin ? (
+                !managerExists ? (
+                  <>
+                    Aucun manager n'existe encore?{" "}
+                    <button 
+                      onClick={() => setIsLogin(!isLogin)} 
+                      className="footer-link"
+                      type="button"
+                    >
+                      Créer un compte Manager
+                    </button>
+                  </>
+                ) : (
+                  <span style={{color: '#6b7280'}}>Connectez-vous avec votre compte manager</span>
+                )
+              ) : (
+                <>
+                  Vous avez déjà un compte?{" "}
+                  <button 
+                    onClick={() => setIsLogin(!isLogin)} 
+                    className="footer-link"
+                    type="button"
+                  >
+                    Se connecter
+                  </button>
+                </>
+              )}
             </p>
           </div>
         </div>
