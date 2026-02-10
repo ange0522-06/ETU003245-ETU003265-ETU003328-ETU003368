@@ -23,6 +23,9 @@ WORKDIR /app
 # Créer l'utilisateur app avec les bonnes permissions (Debian/Ubuntu)
 RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
+# Installer curl pour le health check Docker
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
 # Créer les dossiers AVANT de changer d'utilisateur
 RUN mkdir -p /app/uploads/photos && \
     chown -R appuser:appgroup /app

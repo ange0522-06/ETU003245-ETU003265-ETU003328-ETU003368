@@ -39,4 +39,4 @@ docker pull node:20-alpine
 docker compose up -d
 
 # tester
-docker compose exec postgres psql -U postgres -d cloud
+docker compose exec postgres psql -U postgres -d cloud  
