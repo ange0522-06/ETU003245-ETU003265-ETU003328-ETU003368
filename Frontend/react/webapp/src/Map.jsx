@@ -71,6 +71,7 @@ export default function Map() {
   const [showPhotos, setShowPhotos] = useState(null); // null ou l'id du signalement
   const [source, setSource] = useState('firebase'); // 'sql' ou 'firebase'
   const { profile } = useProfile();
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   // Filtrer uniquement les signalements avec coordonnées GPS valides
   const validPoints = points.filter(p => 
@@ -145,6 +146,26 @@ export default function Map() {
     loadSignalements();
   }, [profile, source]);
 
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log("🌍 Mode ONLINE");
+      setIsOnline(true);
+    };
+
+    const handleOffline = () => {
+      console.log("📴 Mode OFFLINE");
+      setIsOnline(false);
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
   return (
     <div className="map-page">
       <div className="page-header">
@@ -209,7 +230,11 @@ export default function Map() {
               style={{height: '100%', width: '100%', borderRadius: '12px'}}
             >
               <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                url={
+                  isOnline
+                    ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    : "http://localhost:8085/styles/basic/{z}/{x}/{y}.png"
+                }
                 attribution="&copy; OpenStreetMap contributors"
               />
               {adjustedPoints.map((pt) => (
