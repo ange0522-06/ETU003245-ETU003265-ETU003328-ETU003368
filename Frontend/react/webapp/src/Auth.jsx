@@ -225,7 +225,7 @@ export default function Auth() {
                   <input type="checkbox" />
                   <span>Se souvenir pendant 30 jours</span>
                 </label>
-                <a href="#" className="forgot-link">Mot de passe oubli\u00e9?</a>
+                <a href="#" className="forgot-link">Mot de passe oublié?</a>
               </div>
             )}
             
