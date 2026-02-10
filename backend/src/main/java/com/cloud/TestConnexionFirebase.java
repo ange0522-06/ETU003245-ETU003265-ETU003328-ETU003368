@@ -8,12 +8,14 @@ import com.cloud.service.FireStoreService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Component
+@ConditionalOnProperty(name = "firebase.test.enabled", havingValue = "true")
 @RequiredArgsConstructor
 @Slf4j
 public class TestConnexionFirebase implements CommandLineRunner {
