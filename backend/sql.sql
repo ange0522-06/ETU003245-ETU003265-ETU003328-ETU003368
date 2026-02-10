@@ -13,6 +13,8 @@ CREATE TABLE utilisateur (
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
+
 -- ================================
 -- TABLE : session
 -- ================================
@@ -153,3 +155,67 @@ CREATE TABLE IF NOT EXISTS photo_signalement (
 
 -- Index pour améliorer les performances de recherche
 CREATE INDEX IF NOT EXISTS idx_photo_signalement ON photo_signalement(id_signalement);
+
+-- ================================
+-- AJOUT DE COLONNE FIREBASE_UID POUR TRACKING
+-- ================================
+-- Pour la table users actuelle (structure JPA)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS firebase_uid VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS firebase_synced_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS sync_status VARCHAR(50) DEFAULT 'NOT_SYNCED';
+
+-- Index pour optimiser les recherches Firebase
+CREATE INDEX IF NOT EXISTS idx_users_firebase_uid ON users(firebase_uid);
+CREATE INDEX IF NOT EXISTS idx_users_sync_status ON users(sync_status);
+
+-- Commentaires pour clarification
+COMMENT ON COLUMN users.firebase_uid
+IS 'UID de l''utilisateur dans Firebase Auth';
+
+COMMENT ON COLUMN users.firebase_synced_at
+IS 'Date de dernière synchronisation vers Firebase';
+
+COMMENT ON COLUMN users.sync_status
+IS 'Statut sync : NOT_SYNCED, SYNCED, SYNC_ERROR';
+
+-- ================================
+-- VUES UTILES POUR MONITORING
+-- ================================
+
+-- Vue des utilisateurs synchronisés
+CREATE OR REPLACE VIEW users_firebase_status AS
+SELECT 
+    id,
+    email,
+    role,
+    CASE 
+        WHEN firebase_uid IS NOT NULL AND firebase_uid != '' THEN 'SYNCHRONISÉ'
+        WHEN sync_status = 'SYNC_ERROR' THEN 'ERREUR'
+        ELSE 'NON SYNCHRONISÉ'
+    END as firebase_status,
+    firebase_uid,
+    firebase_synced_at,
+    CASE 
+        WHEN role = 'user' THEN 'ÉLIGIBLE'
+        ELSE 'NON ÉLIGIBLE (rôle: ' || COALESCE(role, 'NULL') || ')'
+    END as eligibility_status,
+    locked
+FROM users
+ORDER BY 
+    CASE WHEN role = 'user' THEN 1 ELSE 2 END,
+    firebase_synced_at DESC NULLS LAST;
+
+-- Vue de statistiques
+CREATE OR REPLACE VIEW firebase_sync_stats AS
+SELECT 
+    COUNT(*) as total_users,
+    COUNT(CASE WHEN role = 'user' THEN 1 END) as eligible_users,
+    COUNT(CASE WHEN firebase_uid IS NOT NULL AND firebase_uid != '' THEN 1 END) as synced_users,
+    COUNT(CASE WHEN role = 'user' AND (firebase_uid IS NULL OR firebase_uid = '') THEN 1 END) as pending_sync_users,
+    COUNT(CASE WHEN sync_status = 'SYNC_ERROR' THEN 1 END) as error_users,
+    ROUND(
+        (COUNT(CASE WHEN firebase_uid IS NOT NULL AND firebase_uid != '' THEN 1 END) * 100.0) / 
+        NULLIF(COUNT(CASE WHEN role = 'user' THEN 1 END), 0), 
+        2
+    ) as sync_percentage
+FROM users;

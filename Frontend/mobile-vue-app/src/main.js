@@ -17,6 +17,13 @@ import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet';
 
 import router from './router';
 
+// 🔥 Initialiser Firebase Auth automatiquement
+import { authService } from './services/authService.js';
+
+// Initialiser l'authentification Firebase dès le démarrage
+authService.initializeAuth();
+console.log('🔥 Service d\'authentification Firebase initialisé');
+
 const app = createApp(App);
 app.use(IonicVue);
 app.use(router);

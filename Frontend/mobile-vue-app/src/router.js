@@ -4,7 +4,7 @@ import HomePage from './HomePage.vue';
 import MapPage from './MapPage.vue';
 import MyReportsPage from './MyReportsPage.vue';
 import NotificationsPage from './NotificationsPage.vue';
-import { authService } from './services/authService';
+import { auth } from './firebase';
 
 const routes = [
   {
@@ -46,31 +46,11 @@ const router = createRouter({
 
 // Navigation guard pour protéger les pages
 router.beforeEach((to, from, next) => {
-  // Initialiser l'authentification si pas déjà fait
-  authService.initializeAuth();
-  
-  const isAuthenticated = authService.isLoggedIn.value;
-  const canAccessMobile = authService.canAccessMobileApp();
-  
-  console.log('🚯 Navigation vers:', to.name, '| Authé:', isAuthenticated, '| Mobile OK:', canAccessMobile);
-  
-  if (to.meta.requiresAuth) {
-    if (!isAuthenticated) {
-      console.log('🚫 Redirection vers login - pas connecté');
-      next({ name: 'Login' });
-    } else if (!canAccessMobile) {
-      console.log('🚫 Redirection vers login - rôle non autorisé');
-      next({ name: 'Login' });
-    } else {
-      next();
-    }
-  } else if (to.meta.requiresGuest) {
-    if (isAuthenticated && canAccessMobile) {
-      console.log('🏠 Utilisateur déjà connecté, redirection vers home');
-      next({ name: 'Home' });
-    } else {
-      next();
-    }
+  const user = auth.currentUser;
+  if (to.meta.requiresAuth && !user) {
+    next({ name: 'Login' });
+  } else if (to.meta.requiresGuest && user) {
+    next({ name: 'Home' });
   } else {
     next();
   }

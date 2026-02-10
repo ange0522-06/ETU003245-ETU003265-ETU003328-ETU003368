@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 const ProfileContext = createContext();
 
@@ -7,10 +7,23 @@ export function useProfile() {
 }
 
 export function ProfileProvider({ children }) {
-  const [profile, setProfile] = useState("visiteur"); // visiteur, utilisateur, manager
+  // Récupérer le profil depuis le localStorage au chargement
+  const [profile, setProfile] = useState(() => {
+    const savedProfile = localStorage.getItem("userProfile");
+    return savedProfile || "visiteur";
+  });
 
-  const login = (role) => setProfile(role);
-  const logout = () => setProfile("visiteur");
+  const login = (role) => {
+    setProfile(role);
+    localStorage.setItem("userProfile", role);
+    console.log("Profile défini:", role);
+  };
+  
+  const logout = () => {
+    setProfile("visiteur");
+    localStorage.removeItem("userProfile");
+    localStorage.removeItem("token");
+  };
 
   return (
     <ProfileContext.Provider value={{ profile, login, logout }}>

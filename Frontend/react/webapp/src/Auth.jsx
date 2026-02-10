@@ -71,18 +71,27 @@ export default function Auth() {
 
     try {
       if (isLogin) {
-        const user = await loginApi(email, password);
-        if (user.token) localStorage.setItem("token", user.token);
-        if (user.role && user.role.toLowerCase() === "manager") {
+        const response = await loginApi(email, password);
+        if (response.token) localStorage.setItem("token", response.token);
+        
+        // Le rôle est dans response.user.role (structure AuthResponse)
+        const userRole = response.user?.role || response.role;
+        console.log("Rôle récupéré:", userRole);
+        
+        if (userRole && userRole.toLowerCase() === "manager") {
           login("manager");
         } else {
           login("utilisateur");
         }
         navigate("/dashboard");
       } else {
-        const user = await registerApi(email, password, role);
-        if (user.token) localStorage.setItem("token", user.token);
-        if (user.role && user.role.toLowerCase() === "manager") {
+        const response = await registerApi(email, password, role);
+        if (response.token) localStorage.setItem("token", response.token);
+        
+        // Le rôle est dans response.user.role ou response.role
+        const userRole = response.user?.role || response.role;
+        
+        if (userRole && userRole.toLowerCase() === "manager") {
           login("manager");
         } else {
           login("utilisateur");
