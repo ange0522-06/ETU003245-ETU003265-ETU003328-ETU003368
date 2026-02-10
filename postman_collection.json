@@ -1,0 +1,224 @@
+{
+  "info": {
+    "name": "Gestion-routiere API",
+    "_postman_id": "d3b2b5c1-9f3a-4d6e-8a2b-1e2f3c4d5e6f",
+    "description": "Collection exportable pour Postman — endpoints backend (usez {{baseUrl}} et {{token}})",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register (local)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nouveau.utilisateur@example.com\",\n  \"password\": \"Test123!\",\n  \"role\": \"user\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register" }
+          }
+        },
+        {
+          "name": "Login (local)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nouveau.utilisateur@example.com\",\n  \"password\": \"Test123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login" }
+          }
+        },
+        {
+          "name": "Check manager exists",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/auth/check-manager" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth Firebase",
+      "item": [
+        {
+          "name": "Register (firebase)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user.firebase@example.com\",\n  \"password\": \"Test123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/firebase/register" }
+          }
+        },
+        {
+          "name": "Login (firebase - idToken)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"idToken\": \"<FIREBASE_ID_TOKEN>\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/firebase/login" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (manager)",
+      "item": [
+        {
+          "name": "Get all users",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/users" }
+          }
+        },
+        {
+          "name": "Get locked users",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/users/locked" }
+          }
+        },
+        {
+          "name": "Lock user (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/admin/users/:id/lock", "variable": [ { "key": "id", "value": "1" } ] }
+          }
+        },
+        {
+          "name": "Unlock user (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/admin/users/:id/unlock", "variable": [ { "key": "id", "value": "1" } ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Signalements",
+      "item": [
+        {
+          "name": "Get all signalements",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/signalements" } }
+        },
+        {
+          "name": "Update signalement (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"titre\": \"Affaissement route\",\n  \"description\": \"Affaissement sur 4m\",\n  \"statut\": \"en cours\"\n}" },
+            "url": { "raw": "{{baseUrl}}/signalements/:id", "variable": [ { "key": "id", "value": "12345" } ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Photos",
+      "item": [
+        {
+          "name": "Get photos",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/signalements/:id/photos", "variable": [ { "key": "id", "value": "12345" } ] } }
+        },
+        {
+          "name": "Upload photo (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/signalements/:id/photos", "variable": [ { "key": "id", "value": "12345" } ] }
+          }
+        },
+        {
+          "name": "Add photo by URL",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://example.com/photo.jpg\"\n}" },
+            "url": { "raw": "{{baseUrl}}/signalements/:id/photos/url", "variable": [ { "key": "id", "value": "12345" } ] }
+          }
+        },
+        {
+          "name": "Delete photo",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{baseUrl}}/signalements/:id/photos/:photoId", "variable": [ { "key": "id", "value": "12345" }, { "key": "photoId", "value": "1" } ] }
+          }
+        },
+        {
+          "name": "Delete all photos",
+          "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{baseUrl}}/signalements/:id/photos", "variable": [ { "key": "id", "value": "12345" } ] } }
+        },
+        {
+          "name": "Count photos",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/signalements/:id/photos/count", "variable": [ { "key": "id", "value": "12345" } ] } }
+        }
+      ]
+    },
+    {
+      "name": "Firebase Sync",
+      "item": [
+        { "name": "Sync SQL -> Firebase", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/firebase/signalements/sync" } } },
+        { "name": "Get from Firebase", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/firebase/signalements" } } },
+        { "name": "Import Firebase -> SQL", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/firebase/signalements/import" } } }
+      ]
+    },
+    {
+      "name": "Stats",
+      "item": [
+        { "name": "Get stats (agg) - manager", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{baseUrl}}/stats" } } },
+        { "name": "Get traitement stats - manager", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{baseUrl}}/stats/traitement" } } }
+      ]
+    },
+    {
+      "name": "Debug / Test",
+      "item": [
+        { "name": "Token info", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{baseUrl}}/debug/token-info" } } },
+        { "name": "Firebase status (test)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/test/firebase/status" } } },
+        { "name": "Create firebase test user", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/test/firebase/create-test-user" } } },
+        { "name": "List firebase users (test)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/test/firebase/list-users" } } },
+        { "name": "Get firebase users", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/test/firebase/users" } } },
+        { "name": "Check firestore", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/test/firebase/check-firestore" } } },
+        { "name": "Simple firebase test", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/test/firebase/simple-test" } } }
+      ]
+    },
+    {
+      "name": "Root",
+      "item": [
+        { "name": "Root welcome", "request": { "method": "GET", "url": { "raw": "http://localhost:8080/" } } }
+      ]
+    }
+  ]
+}
