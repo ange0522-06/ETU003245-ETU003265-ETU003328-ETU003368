@@ -31,7 +31,7 @@ public class SignalementController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Signalement> updateSignalement(@PathVariable Long id, @RequestBody Signalement body) {
+    public ResponseEntity<Signalement> updateSignalement(@PathVariable String id, @RequestBody Signalement body) {
         Signalement updated = signalementService.updateSignalement(id, body);
         // synchroniser vers Firestore
         fireStoreService.saveSignalementToFirestore(updated);

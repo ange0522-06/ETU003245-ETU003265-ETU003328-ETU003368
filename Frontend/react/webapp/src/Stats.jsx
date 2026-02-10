@@ -99,7 +99,7 @@ export default function Stats() {
     <div className="manager-page">
       <div className="page-header">
         <h1 className="page-title">
-          📊 Statistiques des travaux routiers
+          Statistiques des travaux routiers
         </h1>
         <p className="page-subtitle">
           Vue d'ensemble et analyse des performances de traitement

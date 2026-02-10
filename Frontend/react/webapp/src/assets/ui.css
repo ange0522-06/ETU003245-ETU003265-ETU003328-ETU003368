@@ -221,6 +221,142 @@ body {
   position: relative;
 }
 
+/* ============ TOP BAR ============ */
+.top-bar {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-200);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  z-index: 100;
+}
+
+.top-bar-content {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 8px 24px;
+  height: 50px;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--gray-100);
+  padding: 0;
+}
+
+.icon-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sign-in-icon {
+  width: 42px;
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: 10px;
+}
+
+.sign-in-icon svg {
+  color: #000;
+  width: 22px;
+  height: 22px;
+}
+
+.sign-in-icon:hover {
+  background: var(--gray-50);
+  border-color: var(--primary-navy);
+}
+
+.sign-in-icon:hover svg {
+  color: var(--primary-navy);
+}
+
+.sign-up-icon {
+  background: var(--white);
+  border: 2px solid #000;
+  border-radius: 24px;
+  padding: 0 20px;
+  height: 42px;
+  min-width: 105px;
+}
+
+.signup-text {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #000;
+}
+
+.sign-up-icon:hover {
+  background: #000;
+}
+
+.sign-up-icon:hover .signup-text {
+  color: #fff;
+}
+
+.logout-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-dark);
+}
+
+.logout-icon svg {
+  color: var(--text-dark);
+}
+
+.logout-icon:hover {
+  background: var(--danger-red);
+  color: var(--white);
+}
+
+.logout-icon:hover svg {
+  color: var(--white);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.avatar-icon {
+  font-size: 25px;
+}
+
+.user-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-right: 8px;
+}
+
 /* ============ PAGE HEADER ============ */
 
 .page-header {

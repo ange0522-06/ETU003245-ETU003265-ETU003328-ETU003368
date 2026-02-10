@@ -13,29 +13,27 @@ export default function Sidebar() {
     menuItems = [
       { path: "/dashboard", icon: "📊", label: "DASHBOARD" },
       { path: "/map", icon: "🗺️", label: "MAP" },
-      { path: "/auth", icon: "🔐", label: "LOGIN" },
       { path: "/tana", icon: "🗺️", label: "TANA OFFLINE" }
     ];
   } else if (profile === "manager") {
     menuItems = [
       { path: "/", icon: "🏠", label: "HOME" },
       { path: "/map", icon: "🗺️", label: "MAP" },
-      { path: "/manager", icon: "👨‍💼", label: "MANAGER" },
-      { path: "/stats", icon: "📊", label: "STATISTIQUES" },
+      { path: "/manager", icon: "�", label: "SIGNALEMENT" },
+      { path: "/create-user", icon: "➕", label: "CRÉER UTILISATEUR" },
       { path: "/unblock-users", icon: "🔓", label: "DEBLOQUER" },
-      { path: "/auth", icon: "🔐", label: "LOGIN" },
+      { path: "/stats", icon: "📊", label: "STATISTIQUES" },
     ];
   } else {
     menuItems = [
       { path: "/", icon: "🏠", label: "HOME" },
       { path: "/map", icon: "🗺️", label: "MAP" },
-      { path: "/auth", icon: "🔐", label: "LOGIN" },
     ];
   }
 
   const handleLogout = () => {
     logout();
-    navigate("/auth");
+    navigate("/dashboard");
   };
 
   return (
@@ -79,23 +77,6 @@ export default function Sidebar() {
             </div>
           </div>
         </div>
-        
-        {profile !== "visiteur" && (
-          <button 
-            onClick={handleLogout}
-            className="logout-btn"
-            style={{
-              marginTop: "15px",
-              width: "100%",
-              background: "#e74c3c",
-              padding: "8px 16px",
-              fontSize: "12px"
-            }}
-          >
-            <span>🚪</span>
-            Déconnexion
-          </button>
-        )}
       </div>
     </div>
   );

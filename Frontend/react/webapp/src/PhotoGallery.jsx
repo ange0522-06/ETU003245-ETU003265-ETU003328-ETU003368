@@ -129,7 +129,7 @@ export default function PhotoGallery({ signalementId, canEdit = false }) {
               position: 'relative',
               borderRadius: '8px',
               overflow: 'hidden',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              boxShadow: 'none',
               cursor: 'pointer'
             }}>
               <img

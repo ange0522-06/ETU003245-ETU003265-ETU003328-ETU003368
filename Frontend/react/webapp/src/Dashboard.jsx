@@ -98,7 +98,7 @@ export default function Dashboard() {
     <div className="dashboard-page">
       <div className="page-header">
         <h1 className="page-title">
-          📊 Tableau de bord des travaux
+          Tableau de bord des travaux
         </h1>
         <p className="page-subtitle">
           Suivi en temps réel des signalements et avancement des travaux routiers
@@ -131,57 +131,165 @@ export default function Dashboard() {
           </div>
         )}
 
-        <h2 style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', color: '#2c3e50'}}>
-          📋 Liste des signalements
-        </h2>
+        <div style={{marginTop: '60px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '30px'}}>
+          {/* Schéma de répartition par statut */}
+          <div style={{background: 'white', padding: '30px', borderRadius: '12px', border: '1px solid #e5e7eb'}}>
+            <h3 style={{fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: '#1f2937'}}>
+              📊 Répartition par statut
+            </h3>
+            <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+              {/* Terminés */}
+              <div>
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px'}}>
+                  <span style={{fontSize: '13px', color: '#4b5563'}}>Terminés</span>
+                  <span style={{fontSize: '14px', fontWeight: '600', color: '#10b981'}}>
+                    {signalements.filter(s => s.status === 'termine').length}
+                  </span>
+                </div>
+                <div style={{width: '100%', height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'hidden'}}>
+                  <div style={{
+                    width: `${(signalements.filter(s => s.status === 'termine').length / signalements.length * 100) || 0}%`,
+                    height: '100%',
+                    background: '#10b981',
+                    borderRadius: '4px'
+                  }}></div>
+                </div>
+              </div>
+              
+              {/* En cours */}
+              <div>
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px'}}>
+                  <span style={{fontSize: '13px', color: '#4b5563'}}>En cours</span>
+                  <span style={{fontSize: '14px', fontWeight: '600', color: '#f59e0b'}}>
+                    {signalements.filter(s => s.status === 'en cours').length}
+                  </span>
+                </div>
+                <div style={{width: '100%', height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'hidden'}}>
+                  <div style={{
+                    width: `${(signalements.filter(s => s.status === 'en cours').length / signalements.length * 100) || 0}%`,
+                    height: '100%',
+                    background: '#f59e0b',
+                    borderRadius: '4px'
+                  }}></div>
+                </div>
+              </div>
+              
+              {/* En attente */}
+              <div>
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px'}}>
+                  <span style={{fontSize: '13px', color: '#4b5563'}}>En attente</span>
+                  <span style={{fontSize: '14px', fontWeight: '600', color: '#3b82f6'}}>
+                    {signalements.filter(s => s.status === 'nouveau').length}
+                  </span>
+                </div>
+                <div style={{width: '100%', height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'hidden'}}>
+                  <div style={{
+                    width: `${(signalements.filter(s => s.status === 'nouveau').length / signalements.length * 100) || 0}%`,
+                    height: '100%',
+                    background: '#3b82f6',
+                    borderRadius: '4px'
+                  }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-        <div style={{overflowX: 'auto'}}>
-          <table>
-            <thead>
-              <tr>
-                <th>📅 Date</th>
-                <th>🔄 Status</th>
-                <th>📏 Surface (m²)</th>
-                <th>💰 Budget</th>
-                <th>🏢 Entreprise</th>
-              </tr>
-            </thead>
-            <tbody>
-              {signalements.map(s => (
-                <tr key={s.id}>
-                  <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                      <span>📅</span>
-                      {s.date}
-                    </div>
-                  </td>
-                  <td>
-                    <span style={{
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      fontSize: '0.9rem',
-                      fontWeight: '500',
-                      background: s.status === 'termine' ? 'rgba(76, 175, 80, 0.2)' : 
-                                 s.status === 'en cours' ? 'rgba(255, 193, 7, 0.2)' : 
-                                 'rgba(33, 150, 243, 0.2)',
-                      color: s.status === 'termine' ? '#4caf50' : 
-                             s.status === 'en cours' ? '#ffc107' : '#2196f3'
-                    }}>
-                      {s.status}
-                    </span>
-                  </td>
-                  <td>{s.surface}</td>
-                  <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-                      <span>💰</span>
-                      {s.budget}
-                    </div>
-                  </td>
-                  <td>{s.entreprise}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* Schéma circulaire de progression */}
+          <div style={{background: 'white', padding: '30px', borderRadius: '12px', border: '1px solid #e5e7eb'}}>
+            <h3 style={{fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: '#1f2937'}}>
+              📈 Avancement global
+            </h3>
+            <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px'}}>
+              <div style={{position: 'relative', width: '120px', height: '120px'}}>
+                <svg width="120" height="120" style={{transform: 'rotate(-90deg)'}}>
+                  <circle cx="60" cy="60" r="50" stroke="#e5e7eb" strokeWidth="10" fill="none" />
+                  <circle 
+                    cx="60" 
+                    cy="60" 
+                    r="50" 
+                    stroke="#3b82f6" 
+                    strokeWidth="10" 
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 50}`}
+                    strokeDashoffset={`${2 * Math.PI * 50 * (1 - (stats.avancement / 100))}`}
+                    style={{transition: 'stroke-dashoffset 0.5s ease'}}
+                  />
+                </svg>
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  textAlign: 'center'
+                }}>
+                  <div style={{fontSize: '24px', fontWeight: '700', color: '#1f2937'}}>{stats.avancement}%</div>
+                </div>
+              </div>
+              <div style={{textAlign: 'center'}}>
+                <div style={{fontSize: '14px', color: '#4b5563', marginBottom: '8px'}}>Progression des travaux</div>
+                <div style={{fontSize: '12px', color: '#9ca3af'}}>
+                  {signalements.filter(s => s.status === 'termine').length} sur {signalements.length} terminés
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Schéma des entreprises avec barres */}
+          <div style={{background: 'white', padding: '30px', borderRadius: '12px', border: '1px solid #e5e7eb'}}>
+            <h3 style={{fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: '#1f2937'}}>
+              🏢 Activité des entreprises
+            </h3>
+            <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
+              <div style={{textAlign: 'center'}}>
+                <div style={{fontSize: '36px', fontWeight: '700', color: '#1f2937'}}>
+                  {[...new Set(signalements.map(s => s.entreprise))].length}
+                </div>
+                <div style={{fontSize: '13px', color: '#6b7280'}}>Entreprises</div>
+              </div>
+              <div>
+                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+                  <span style={{fontSize: '13px', color: '#4b5563'}}>Signalements/Entreprise</span>
+                  <span style={{fontSize: '14px', fontWeight: '600', color: '#1f2937'}}>
+                    {Math.round(signalements.length / [...new Set(signalements.map(s => s.entreprise))].length) || 0}
+                  </span>
+                </div>
+                <div style={{width: '100%', height: '10px', background: '#e5e7eb', borderRadius: '5px', overflow: 'hidden'}}>
+                  <div style={{
+                    width: '75%',
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)',
+                    borderRadius: '5px'
+                  }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Schéma avec graphique de zones */}
+          <div style={{background: 'white', padding: '30px', borderRadius: '12px', border: '1px solid #e5e7eb'}}>
+            <h3 style={{fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: '#1f2937'}}>
+              🗺️ Couverture géographique
+            </h3>
+            <div style={{display: 'flex', flexDirection: 'column', gap: '15px'}}>
+              <div style={{display: 'flex', alignItems: 'baseline', gap: '10px'}}>
+                <div style={{fontSize: '36px', fontWeight: '700', color: '#1f2937'}}>{points.length}</div>
+                <div style={{fontSize: '14px', color: '#6b7280'}}>zones</div>
+              </div>
+              <div style={{display: 'flex', gap: '4px', height: '60px', alignItems: 'flex-end'}}>
+                {[3, 5, 4, 7, 2, 6, 4].map((height, idx) => (
+                  <div key={idx} style={{
+                    flex: 1,
+                    height: `${height * 10}px`,
+                    background: idx % 2 === 0 ? '#3b82f6' : '#60a5fa',
+                    borderRadius: '4px 4px 0 0'
+                  }}></div>
+                ))}
+              </div>
+              <div style={{fontSize: '12px', color: '#9ca3af', textAlign: 'center'}}>
+                Répartition des points sur la carte
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

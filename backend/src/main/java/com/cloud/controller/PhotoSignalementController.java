@@ -27,7 +27,7 @@ public class PhotoSignalementController {
      * Récupère toutes les photos d'un signalement
      */
     @GetMapping
-    public ResponseEntity<List<PhotoSignalement>> getPhotos(@PathVariable Long idSignalement) {
+    public ResponseEntity<List<PhotoSignalement>> getPhotos(@PathVariable String idSignalement) {
         List<PhotoSignalement> photos = photoService.getPhotosBySignalement(idSignalement);
         return ResponseEntity.ok(photos);
     }
@@ -38,7 +38,7 @@ public class PhotoSignalementController {
      */
     @PostMapping
     public ResponseEntity<?> uploadPhoto(
-            @PathVariable Long idSignalement,
+            @PathVariable String idSignalement,
             @RequestParam("file") MultipartFile file) {
         try {
             PhotoSignalement photo = photoService.addPhoto(idSignalement, file);
@@ -57,7 +57,7 @@ public class PhotoSignalementController {
      */
     @PostMapping("/url")
     public ResponseEntity<?> addPhotoByUrl(
-            @PathVariable Long idSignalement,
+            @PathVariable String idSignalement,
             @RequestBody Map<String, String> body) {
         try {
             String url = body.get("url");
@@ -78,7 +78,7 @@ public class PhotoSignalementController {
      */
     @DeleteMapping("/{idPhoto}")
     public ResponseEntity<?> deletePhoto(
-            @PathVariable Long idSignalement,
+            @PathVariable String idSignalement,
             @PathVariable Long idPhoto) {
         try {
             photoService.deletePhoto(idPhoto);
@@ -94,7 +94,7 @@ public class PhotoSignalementController {
      * Supprime toutes les photos d'un signalement
      */
     @DeleteMapping
-    public ResponseEntity<?> deleteAllPhotos(@PathVariable Long idSignalement) {
+    public ResponseEntity<?> deleteAllPhotos(@PathVariable String idSignalement) {
         photoService.deleteAllPhotosBySignalement(idSignalement);
         return ResponseEntity.ok(Map.of("message", "Toutes les photos ont été supprimées"));
     }
@@ -104,7 +104,7 @@ public class PhotoSignalementController {
      * Compte le nombre de photos
      */
     @GetMapping("/count")
-    public ResponseEntity<Map<String, Long>> countPhotos(@PathVariable Long idSignalement) {
+    public ResponseEntity<Map<String, Long>> countPhotos(@PathVariable String idSignalement) {
         long count = photoService.countPhotos(idSignalement);
         return ResponseEntity.ok(Map.of("count", count));
     }
