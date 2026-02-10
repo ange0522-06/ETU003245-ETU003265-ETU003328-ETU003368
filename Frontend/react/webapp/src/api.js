@@ -31,6 +31,25 @@ export async function getSignalementsFromFirebase(token) {
   }
   return await res.json();
 }
+
+// Importer les signalements non importés depuis Firebase vers SQL
+export async function importSignalementsFromFirebase(token) {
+  const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+  let res;
+  try {
+    res = await fetch(`${API_URL}/firebase/signalements/import`, {
+      method: "POST",
+      headers
+    });
+  } catch (e) {
+    throw new Error("Impossible de joindre le backend pour l'import: " + e.message);
+  }
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Erreur ${res.status} lors de l'import depuis Firebase${txt ? ': ' + txt : ''}`);
+  }
+  return await res.json();
+}
 // src/api.js
 // Services d'intégration API pour le frontend
 
@@ -59,6 +78,14 @@ export async function registerApi(email, password, role = "user") {
   if (!res.ok) {
     const msg = await res.text();
     throw new Error(msg);
+  }
+  return await res.json();
+}
+
+export async function checkManagerExistsApi() {
+  const res = await fetch(`${API_URL}/auth/check-manager`);
+  if (!res.ok) {
+    throw new Error("Erreur lors de la vérification du manager");
   }
   return await res.json();
 }
