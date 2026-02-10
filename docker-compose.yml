@@ -1,0 +1,92 @@
+version: "3.8"
+
+services:
+  # Base de données PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: cloud_postgres_docker
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cloud
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 18/20
+    ports:
+      - "5433:5432"  # ← CHANGÉ : 5433 au lieu de 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cloud-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Spring Boot
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cloud_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/cloud  # ← Reste à 5432 (communication interne Docker)
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=18/20
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cloud-network
+    volumes:
+      - backend_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+
+  # Frontend React (Mode développement avec hot reload)
+  frontend-dev:
+    build:
+      context: ./Frontend/react/webapp
+      dockerfile: Dockerfile.dev
+    container_name: cloud_frontend_dev
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080/api
+    depends_on:
+      - backend
+    networks:
+      - cloud-network
+    volumes:
+      - ./Frontend/react/webapp:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+
+# carte
+  tileserver:
+    image: maptiler/tileserver-gl:latest
+    container_name: tileserver
+    restart: unless-stopped
+    ports:
+      - "8085:8080"
+    volumes:
+      - ./data:/data
+      - ./config:/config
+    command: ["--config", "/config/config.json"]
+
+networks:
+  cloud-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  backend_uploads:
