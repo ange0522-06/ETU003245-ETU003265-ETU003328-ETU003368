@@ -11,7 +11,25 @@ export default function Manager() {
   const [error, setError] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [showPhotos, setShowPhotos] = useState(null); // null ou l'id du signalement
+  const [prixParM2, setPrixParM2] = useState(() => {
+    const saved = localStorage.getItem('prixParM2');
+    return saved ? parseInt(saved, 10) : 5000; // Valeur par défaut: 5000 Ar/m²
+  });
   const token = localStorage.getItem("token");
+
+  // Sauvegarder le prix par m² dans localStorage
+  const handlePrixParM2Change = (value) => {
+    const prix = parseInt(value, 10) || 0;
+    setPrixParM2(prix);
+    localStorage.setItem('prixParM2', prix.toString());
+  };
+
+  // Calculer le budget automatiquement: prix_par_m2 * niveau * surface_m2
+  const calculerBudget = (niveau, surface) => {
+    const niv = parseInt(niveau, 10) || 1;
+    const surf = parseFloat(surface) || 0;
+    return prixParM2 * niv * surf;
+  };
 
   // Fonction helper pour calculer l'avancement
   const calculerAvancement = (status) => {
@@ -103,38 +121,48 @@ export default function Manager() {
   };
 
   const [editingId, setEditingId] = useState(null);
-  const [editFields, setEditFields] = useState({ surface: '', budget: '', entreprise: '', status: '' });
+  const [editFields, setEditFields] = useState({ surface: '', budget: '', entreprise: '', status: '', niveau: 1 });
 
   const startEdit = (s) => {
     setEditingId(s.id);
-    setEditFields({ surface: s.surface || '', budget: s.budget || '', entreprise: s.entreprise || '', status: s.status || '' });
+    setEditFields({ 
+      surface: s.surface || '', 
+      budget: s.budget || '', 
+      entreprise: s.entreprise || '', 
+      status: s.status || '',
+      niveau: s.niveau || 1
+    });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditFields({ surface: '', budget: '', entreprise: '', status: '' });
+    setEditFields({ surface: '', budget: '', entreprise: '', status: '', niveau: 1 });
   };
 
   const saveEdit = async (id) => {
     try {
+      // Calcul automatique du budget
+      const budgetCalcule = calculerBudget(editFields.niveau, editFields.surface);
       const payload = {
         surfaceM2: editFields.surface,
-        budget: editFields.budget,
+        budget: budgetCalcule,
         entreprise: editFields.entreprise,
-        statut: editFields.status
+        statut: editFields.status,
+        niveau: editFields.niveau
       };
       const updated = await updateSignalementApi(id, payload, token);
       setSignalements(signalements.map(s =>
         s.id === id ? {
           ...s,
           surface: updated.surfaceM2 ?? updated.surface ?? editFields.surface,
-          budget: updated.budget ?? editFields.budget,
+          budget: updated.budget ?? budgetCalcule,
           entreprise: updated.entreprise ?? editFields.entreprise,
-          status: updated.statut ?? updated.status ?? editFields.status
+          status: updated.statut ?? updated.status ?? editFields.status,
+          niveau: updated.niveau ?? editFields.niveau
         } : s
       ));
       setEditingId(null);
-      alert('✅ Signalement mis à jour et synchronisé');
+      alert(`✅ Signalement mis à jour !\nBudget calculé: ${budgetCalcule.toLocaleString()} Ar (${prixParM2} x ${editFields.niveau} x ${editFields.surface})`);
     } catch (err) {
       alert(err.message || 'Erreur lors de la mise à jour du signalement');
     }
@@ -237,13 +265,61 @@ export default function Manager() {
           📋 Gestion des signalements
         </h2>
         
+        {/* Configuration du prix par m² */}
+        <div style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          padding: '20px',
+          borderRadius: '12px',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '20px',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{color: 'white'}}>
+            <label style={{fontWeight: '600', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px'}}>
+              💰 Prix par m² forfaitaire :
+            </label>
+            <p style={{margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.9}}>
+              Utilisé pour le calcul automatique du budget
+            </p>
+          </div>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+            <input
+              type="number"
+              value={prixParM2}
+              onChange={(e) => handlePrixParM2Change(e.target.value)}
+              style={{
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                width: '150px',
+                textAlign: 'right'
+              }}
+            />
+            <span style={{color: 'white', fontWeight: '600', fontSize: '1.1rem'}}>Ar/m²</span>
+          </div>
+          <div style={{
+            background: 'rgba(255,255,255,0.2)',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            color: 'white',
+            fontSize: '0.9rem'
+          }}>
+            <strong>Formule :</strong> Budget = Prix/m² × Niveau × Surface
+          </div>
+        </div>
+        
         <div style={{overflowX: 'auto', marginBottom: '50px'}}>
           <table>
             <thead>
               <tr>
                 <th>📅 Date</th>
                 <th>🔄 Status</th>
-                <th>� Avancement</th>
+                <th>📊 Niveau</th>
+                <th>📈 Avancement</th>
                 <th>📏 Surface (m²)</th>
                 <th>💰 Budget</th>
                 <th>🏢 Entreprise</th>
@@ -274,6 +350,37 @@ export default function Manager() {
                     }}>
                       {s.status}
                     </span>
+                  </td>
+                  <td>
+                    {editingId === s.id ? (
+                      <select
+                        value={editFields.niveau}
+                        onChange={e => setEditFields({ ...editFields, niveau: parseInt(e.target.value, 10) })}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: '2px solid #9c27b0',
+                          background: 'white',
+                          fontWeight: '600',
+                          color: '#9c27b0'
+                        }}
+                      >
+                        {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span style={{
+                        padding: '6px 14px',
+                        borderRadius: '20px',
+                        fontSize: '0.95rem',
+                        fontWeight: '600',
+                        background: 'rgba(156, 39, 176, 0.15)',
+                        color: '#9c27b0'
+                      }}>
+                        {s.niveau || 1}/10
+                      </span>
+                    )}
                   </td>
                   <td>
                     <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>

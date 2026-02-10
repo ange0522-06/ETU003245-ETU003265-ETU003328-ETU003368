@@ -107,6 +107,7 @@ export async function getSignalementsApi(token) {
     longitude: s.longitude,
     description: s.description,
     id_user: s.utilisateur ? s.utilisateur.id : s.id_user,
+    niveau: s.niveau || 1, // Niveau de réparation (1-10)
     // Ajouter les dates d'étapes
     dateNouveau: s.dateNouveau,
     dateEnCours: s.dateEnCours,

@@ -43,6 +43,18 @@ export default function DetailsPanel({ point }) {
             <span style={{color: '#666'}}>Date :</span> <b>{point.date || '-'}</b>
           </li>
           <li style={{padding: '8px 0', borderBottom: 'none'}}>
+            <span style={{color: '#666'}}>Niveau :</span>{' '}
+            <span style={{
+              color: '#9c27b0', 
+              fontWeight: 'bold',
+              padding: '4px 12px',
+              borderRadius: '12px',
+              background: '#9c27b020'
+            }}>
+              {point.niveau || 1}/10
+            </span>
+          </li>
+          <li style={{padding: '8px 0', borderBottom: 'none'}}>
             <span style={{color: '#666'}}>Surface :</span> <b>{point.surface || '-'} m²</b>
           </li>
           <li style={{padding: '8px 0', borderBottom: 'none'}}>

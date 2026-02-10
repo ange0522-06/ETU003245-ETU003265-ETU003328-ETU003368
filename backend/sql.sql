@@ -219,3 +219,8 @@ SELECT
         2
     ) as sync_percentage
 FROM users;
+
+-- ================================
+-- AJOUT COLONNE : niveau pour signalements
+-- ================================
+ALTER TABLE signalement ADD COLUMN IF NOT EXISTS niveau INTEGER DEFAULT 1 CHECK (niveau >= 1 AND niveau <= 10);
