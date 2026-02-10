@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import DetailsPanel from "./DetailsPanel";
 import RecapTable from "./RecapTable";
 import PhotoGallery from "./PhotoGallery";
-import { getSignalementsApi } from "./api";
+import { getSignalementsApi, getSignalementsFromFirebase } from "./api";
 import { useProfile } from "./ProfileContext";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -69,21 +69,81 @@ export default function Map() {
   const [error, setError] = useState("");
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [showPhotos, setShowPhotos] = useState(null); // null ou l'id du signalement
+  const [source, setSource] = useState('firebase'); // 'sql' ou 'firebase'
   const { profile } = useProfile();
 
-  useEffect(() => {
+  // Filtrer uniquement les signalements avec coordonnées GPS valides
+  const validPoints = points.filter(p => 
+    p.latitude && p.longitude && 
+    !isNaN(p.latitude) && !isNaN(p.longitude) &&
+    p.latitude !== 0 && p.longitude !== 0
+  );
+
+  // Décaler légèrement les marqueurs qui ont les mêmes coordonnées
+  const adjustedPoints = validPoints.map((point, index) => {
+    const duplicates = validPoints.filter(p => 
+      Math.abs(p.latitude - point.latitude) < 0.00001 && 
+      Math.abs(p.longitude - point.longitude) < 0.00001
+    );
+    
+    if (duplicates.length > 1) {
+      const dupIndex = duplicates.findIndex(p => p.id === point.id);
+      // Décalage en cercle autour du point original
+      const angle = (dupIndex * 360 / duplicates.length) * (Math.PI / 180);
+      const offset = 0.0005; // ~50m de décalage
+      return {
+        ...point,
+        latitude: point.latitude + (offset * Math.sin(angle)),
+        longitude: point.longitude + (offset * Math.cos(angle))
+      };
+    }
+    return point;
+  });
+
+  const loadSignalements = async () => {
     setLoading(true);
     setError("");
-    getSignalementsApi(localStorage.getItem("token"))
-      .then(data => {
-        setPoints(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message || "Erreur lors du chargement des points");
-        setLoading(false);
-      });
-  }, [profile]);
+    try {
+      const token = localStorage.getItem("token");
+      let data;
+      
+      if (source === 'firebase') {
+        // Récupérer depuis Firebase
+        const firebaseData = await getSignalementsFromFirebase(token);
+        // Mapper les données Firebase vers le format attendu
+        data = firebaseData.map(s => ({
+          id: s.idSignalement || s.id,
+          status: s.statut || s.status,
+          date: s.dateSignalement ? s.dateSignalement.split('T')[0] : s.date || '',
+          surface: s.surfaceM2 || s.surface,
+          budget: s.budget,
+          entreprise: s.entreprise,
+          titre: s.titre,
+          latitude: s.latitude,
+          longitude: s.longitude,
+          description: s.description,
+          id_user: s.id_user,
+          dateNouveau: s.dateNouveau,
+          dateEnCours: s.dateEnCours,
+          dateTermine: s.dateTermine,
+          avancement: s.avancement
+        }));
+      } else {
+        // Récupérer depuis SQL
+        data = await getSignalementsApi(token);
+      }
+      
+      setPoints(data);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message || "Erreur lors du chargement des points");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSignalements();
+  }, [profile, source]);
 
   return (
     <div className="map-page">
@@ -94,6 +154,48 @@ export default function Map() {
         <p className="page-subtitle">
           Visualisation géographique des points de travaux en cours et planifiés
         </p>
+        {!loading && (
+          <div style={{marginTop: '12px', padding: '8px 16px', background: validPoints.length < points.length ? '#fff3cd' : '#d4edda', borderRadius: '6px', display: 'inline-block'}}>
+            <strong>📍 {validPoints.length}</strong> signalement(s) affiché(s) sur la carte (sur <strong>{points.length}</strong> au total)
+            {validPoints.length < points.length && (
+              <span style={{marginLeft: '8px', color: '#856404'}}>
+                ⚠️ {points.length - validPoints.length} sans coordonnées GPS
+              </span>
+            )}
+          </div>
+        )}
+        <div style={{marginTop: '20px', display: 'flex', gap: '12px', justifyContent: 'center'}}>
+          <button
+            onClick={() => setSource('firebase')}
+            style={{
+              padding: '10px 20px',
+              background: source === 'firebase' ? '#2196f3' : '#666',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: source === 'firebase' ? 'bold' : 'normal',
+              transition: 'all 0.3s'
+            }}
+          >
+            📥 Firebase (Mobile)
+          </button>
+          <button
+            onClick={() => setSource('sql')}
+            style={{
+              padding: '10px 20px',
+              background: source === 'sql' ? '#4caf50' : '#666',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: source === 'sql' ? 'bold' : 'normal',
+              transition: 'all 0.3s'
+            }}
+          >
+            💾 SQL (Web)
+          </button>
+        </div>
       </div>
       
       <div style={{display: 'flex', alignItems: 'flex-start', gap: '20px', width: '100%'}}>
@@ -110,7 +212,7 @@ export default function Map() {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution="&copy; OpenStreetMap contributors"
               />
-              {points.map((pt) => (
+              {adjustedPoints.map((pt) => (
                 <Marker
                   key={pt.id}
                   position={[pt.latitude, pt.longitude]}

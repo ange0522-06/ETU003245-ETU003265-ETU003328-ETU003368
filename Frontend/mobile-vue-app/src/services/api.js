@@ -30,7 +30,12 @@ export const apiService = {
           entreprise: data.entreprise,
             id_user: data.id_user,
             userId: data.id_user || data.userId || null,
-          type: data.type || 'non spécifié'
+          type: data.type || 'non spécifié',
+          // Dates d'avancement
+          dateNouveau: data.dateNouveau,
+          dateEnCours: data.dateEnCours,
+          dateTermine: data.dateTermine,
+          avancement: data.avancement || 0
         });
       });
       console.log('✅ Signalements récupérés depuis Firebase:', signalements.length);
@@ -61,7 +66,12 @@ export const apiService = {
           entreprise: data.entreprise,
           id_user: data.id_user,
           userId: data.id_user || data.userId || null,
-          type: data.type || 'non spécifié'
+          type: data.type || 'non spécifié',
+          // Dates d'avancement
+          dateNouveau: data.dateNouveau,
+          dateEnCours: data.dateEnCours,
+          dateTermine: data.dateTermine,
+          avancement: data.avancement || 0
         });
       });
       console.log('🔄 Mise à jour temps réel Firebase:', signalements.length, 'signalements');
@@ -78,7 +88,8 @@ export const apiService = {
       const docRef = await addDoc(collection(db, 'signalements'), {
         ...signalement,
         dateSignalement: new Date().toISOString(),
-        statut: 'nouveau'
+        statut: 'nouveau',
+        importedToSQL: false  // Signalement à importer vers SQL
       });
       console.log('✅ Signalement ajouté dans Firebase:', docRef.id);
       return { id: docRef.id, ...signalement };
