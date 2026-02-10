@@ -1,3 +1,10 @@
+DROP TABLE IF EXISTS photo_signalement CASCADE;
+DROP TABLE IF EXISTS synchronisation CASCADE;
+DROP TABLE IF EXISTS signalement CASCADE;
+DROP TABLE IF EXISTS tentative_connexion CASCADE;
+DROP TABLE IF EXISTS session CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -95,12 +102,12 @@ INSERT INTO users (email, password, role, locked, failed_attempts) VALUES ('mana
 
 INSERT INTO signalement (budget, date_signalement, description, entreprise, latitude, longitude, statut, surface_m2, titre, id_user)
 VALUES
-  (12000, '2026-01-10 09:00:00', 'Nid de poule important', 'Colas', -18.8792, 47.5079, 'NOUVEAU', 15, 'Route dégradée', 1),
-  (5000, '2026-01-15 14:30:00', 'Signalement de fissures', 'Eiffage', -18.9100, 47.5200, 'EN_COURS', 8, 'Fissures chaussée', 1),
-  (8000, '2026-01-20 11:00:00', 'Trous sur la route', 'Vinci', -18.9000, 47.5100, 'TERMINE', 10, 'Trous route', 1),
-  (15000, '2026-01-22 16:00:00', 'Effondrement partiel', 'Colas', -18.8800, 47.5000, 'NOUVEAU', 20, 'Effondrement', 1),
-  (7000, '2026-01-25 10:00:00', 'Déformation de la chaussée', 'Eiffage', -18.8850, 47.5050, 'EN_COURS', 12, 'Déformation', 1),
-  (9500, '2026-01-26 13:33:33', 'Problème de drainage', 'Vinci', -18.888333333333334, 47.599999999999994, 'NOUVEAU', 9, 'Drainage', 1),
-  (20000, '2026-01-27 08:30:00', 'Route barrée', 'Colas', -18.8920, 47.5120, 'TERMINE', 25, 'Route barrée', 1);
+  (12000, '2026-01-10 09:00:00', 'Nid de poule important', 'Colas', -18.8792, 47.5079, 'NOUVEAU', 15, 'Route dégradée', 2),
+  (5000, '2026-01-15 14:30:00', 'Signalement de fissures', 'Eiffage', -18.9100, 47.5200, 'EN_COURS', 8, 'Fissures chaussée', 2),
+  (8000, '2026-01-20 11:00:00', 'Trous sur la route', 'Vinci', -18.9000, 47.5100, 'TERMINE', 10, 'Trous route', 2),
+  (15000, '2026-01-22 16:00:00', 'Effondrement partiel', 'Colas', -18.8800, 47.5000, 'NOUVEAU', 20, 'Effondrement', 2),
+  (7000, '2026-01-25 10:00:00', 'Déformation de la chaussée', 'Eiffage', -18.8850, 47.5050, 'EN_COURS', 12, 'Déformation', 2),
+  (9500, '2026-01-26 13:33:33', 'Problème de drainage', 'Vinci', -18.888333333333334, 47.599999999999994, 'NOUVEAU', 9, 'Drainage', 2),
+  (20000, '2026-01-27 08:30:00', 'Route barrée', 'Colas', -18.8920, 47.5120, 'TERMINE', 25, 'Route barrée', 2);
 
 

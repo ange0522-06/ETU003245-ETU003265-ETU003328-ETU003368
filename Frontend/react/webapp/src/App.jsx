@@ -45,7 +45,6 @@ function AppContent() {
           <Route path="/create-user" element={<CreateUser />} />
           <Route path="/map" element={<Map />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/tana" element={<Tana />} />
         </Routes>
       </div>
     </div>

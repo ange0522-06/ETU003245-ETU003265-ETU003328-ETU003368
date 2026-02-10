@@ -12,8 +12,7 @@ export default function Sidebar() {
   if (profile === "visiteur") {
     menuItems = [
       { path: "/dashboard", icon: "📊", label: "DASHBOARD" },
-      { path: "/map", icon: "🗺️", label: "MAP" },
-      { path: "/tana", icon: "🗺️", label: "TANA OFFLINE" }
+      { path: "/map", icon: "🗺️", label: "MAP" }
     ];
   } else if (profile === "manager") {
     menuItems = [
